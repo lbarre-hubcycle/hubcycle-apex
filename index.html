@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hubcycle Org Chart Designer</title>
+<style>
+:root {
+  --sidebar-width: 380px;
+  --bg: #f5f6fa;
+  --panel-bg: #ffffff;
+  --text: #2d3436;
+  --text-muted: #636e72;
+  --border: #dfe6e9;
+  --accent: #0984e3;
+  --accent-hover: #0770c2;
+  --danger: #d63031;
+  --danger-hover: #c0392b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top bar */
+.topbar {
+  height: 52px;
+  background: #2d3436;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+}
+.topbar h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+.topbar-actions { display: flex; gap: 8px; }
+.topbar-actions button {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.topbar-actions button:hover { background: rgba(255,255,255,0.25); }
+
+/* Layout */
+.app-layout {
+  display: flex;
+  height: calc(100vh - 52px);
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-tab {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  transition: all 0.2s;
+}
+.sidebar-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Forms */
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: var(--danger-hover); }
+.btn-secondary { background: var(--border); color: var(--text); }
+.btn-secondary:hover { background: #c8d6e5; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-block { width: 100%; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+
+/* Item list */
+.item-list { list-style: none; }
+.item-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.item-list li:hover { border-color: var(--accent); background: #f0f7ff; }
+.item-list li.active { border-color: var(--accent); background: #e8f3ff; }
+.item-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.item-color {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.item-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-sub { font-size: 11px; color: var(--text-muted); }
+.item-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--border);
+}
+.item-actions { display: flex; gap: 4px; flex-shrink: 0; margin-left: 8px; }
+.item-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.item-actions button:hover { background: var(--border); }
+.item-actions button.del:hover { color: var(--danger); }
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+}
+.add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Edit panel (overlay in sidebar) */
+.edit-panel {
+  display: none;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--panel-bg);
+  z-index: 10;
+  flex-direction: column;
+}
+.edit-panel.open { display: flex; }
+.edit-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.edit-panel-header button {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px;
+}
+.edit-panel-header h3 { font-size: 15px; font-weight: 600; }
+.edit-panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* Chart area */
+.chart-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.chart-container {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+.chart-container.grabbing { cursor: grabbing; }
+.chart-container svg { width: 100%; height: 100%; }
+
+/* Zoom controls */
+.zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+.zoom-controls button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.zoom-controls button:hover { background: var(--bg); }
+.zoom-controls button + button { border-top: 1px solid var(--border); }
+
+/* Org node */
+.org-node {
+  cursor: pointer;
+}
+.org-node rect.node-bg {
+  fill: white;
+  stroke: #ddd;
+  stroke-width: 1.5;
+  rx: 10;
+  ry: 10;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+  transition: stroke 0.2s;
+}
+.org-node:hover rect.node-bg { stroke-width: 2; }
+.org-node rect.node-stripe {
+  rx: 10;
+  ry: 10;
+}
+.org-node text.node-function {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #2d3436;
+}
+.org-node text.node-name {
+  font-size: 12px;
+  fill: #636e72;
+}
+.org-node text.node-title {
+  font-size: 10px;
+  fill: #b2bec3;
+}
+
+/* Links */
+.link-solid {
+  fill: none;
+  stroke: #b2bec3;
+  stroke-width: 1.5;
+}
+.link-dotted {
+  fill: none;
+  stroke: #b2bec3;
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.modal textarea {
+  width: 100%;
+  height: 300px;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Checkbox group */
+.checkbox-group { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 6px; }
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  text-transform: none;
+  font-weight: 400;
+  color: var(--text);
+}
+.checkbox-group label:hover { background: var(--bg); }
+
+/* Photo upload area */
+.photo-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.photo-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.photo-preview span { font-size: 20px; color: var(--text-muted); }
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 20px 0 10px;
+}
+
+/* Layout direction toggle */
+.layout-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 3px;
+}
+.layout-toggle button {
+  padding: 5px 12px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.layout-toggle button.active {
+  background: white;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+.empty-state p { font-size: 14px; margin-bottom: 8px; }
+.empty-state small { font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>HUBCYCLE ORG CHART</h1>
+  <div class="topbar-actions">
+    <button onclick="exportJSON()">Export JSON</button>
+    <button onclick="showImportModal()">Import JSON</button>
+    <button onclick="exportSVG()">Export SVG</button>
+    <button onclick="fitToScreen()">Fit to Screen</button>
+  </div>
+</div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" data-tab="business-lines">Business Lines</button>
+      <button class="sidebar-tab" data-tab="people">People</button>
+      <button class="sidebar-tab" data-tab="functions">Functions</button>
+    </div>
+    <div class="sidebar-content" style="position:relative;">
+
+      <!-- Business Lines Tab -->
+      <div class="tab-panel active" id="tab-business-lines">
+        <button class="add-btn" onclick="editBusinessLine()">+ Add Business Line</button>
+        <ul class="item-list" id="bl-list"></ul>
+      </div>
+
+      <!-- People Tab -->
+      <div class="tab-panel" id="tab-people" style="display:none;">
+        <button class="add-btn" onclick="editPerson()">+ Add Person</button>
+        <ul class="item-list" id="people-list"></ul>
+      </div>
+
+      <!-- Functions Tab -->
+      <div class="tab-panel" id="tab-functions" style="display:none;">
+        <button class="add-btn" onclick="editFunction()">+ Add Function</button>
+        <ul class="item-list" id="func-list"></ul>
+      </div>
+
+      <!-- Edit panels -->
+      <div class="edit-panel" id="edit-bl">
+        <div class="edit-panel-header">
+          <button onclick="closePanel('edit-bl')">&larr;</button>
+          <h3 id="edit-bl-title">Add Business Line</h3>
+        </div>
+        <div class="edit-panel-body">
+          <input type="hidden" id="bl-id">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="bl-name" placeholder="e.g. Sales">
+          </div>
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="bl-color" value="#0984e3" style="height:40px;padding:4px;">
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-block" onclick="saveBusinessLine()">Save</button>
+            <button class="btn btn-danger btn-sm" id="bl-delete-btn" style="display:none;" onclick="deleteBusinessLine()">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-panel" id="edit-person">
+        <div class="edit-panel-header">
+          <button onclick="closePanel('edit-person')">&larr;</button>
+          <h3 id="edit-person-title">Add Person</h3>
+        </div>
+        <div class="edit-panel-body">
+          <input type="hidden" id="person-id">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="person-name" placeholder="e.g. Jane Doe">
+          </div>
+          <div class="form-group">
+            <label>Job Title</label>
+            <input type="text" id="person-title" placeholder="e.g. Head of Sales">
+          </div>
+          <div class="form-group">
+            <label>Photo</label>
+            <div class="photo-upload">
+              <div class="photo-preview" id="person-photo-preview"><span>?</span></div>
+              <div style="flex:1;">
+                <input type="text" id="person-photo" placeholder="Paste image URL or upload">
+                <input type="file" id="person-photo-file" accept="image/*" style="margin-top:6px;font-size:12px;" onchange="handlePhotoUpload(event)">
+              </div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-block" onclick="savePerson()">Save</button>
+            <button class="btn btn-danger btn-sm" id="person-delete-btn" style="display:none;" onclick="deletePerson()">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-panel" id="edit-function">
+        <div class="edit-panel-header">
+          <button onclick="closePanel('edit-function')">&larr;</button>
+          <h3 id="edit-func-title">Add Function</h3>
+        </div>
+        <div class="edit-panel-body">
+          <input type="hidden" id="func-id">
+          <div class="form-group">
+            <label>Function Name</label>
+            <input type="text" id="func-name" placeholder="e.g. Sales Director">
+          </div>
+          <div class="form-group">
+            <label>Business Line</label>
+            <select id="func-bl"></select>
+          </div>
+
+          <div class="section-title">Reporting</div>
+          <div class="form-group">
+            <label>Reports To (direct line)</label>
+            <select id="func-reports-to">
+              <option value="">-- None (top-level) --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Dotted Line To</label>
+            <select id="func-dotted-to">
+              <option value="">-- None --</option>
+            </select>
+          </div>
+
+          <div class="section-title">Assigned People</div>
+          <div class="form-group">
+            <div class="checkbox-group" id="func-people-checkboxes"></div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary btn-block" onclick="saveFunction()">Save</button>
+            <button class="btn btn-danger btn-sm" id="func-delete-btn" style="display:none;" onclick="deleteFunction()">Delete</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-area">
+    <div class="chart-container" id="chart-container">
+      <svg id="org-svg"></svg>
+    </div>
+    <div class="zoom-controls">
+      <button onclick="zoomIn()" title="Zoom in">+</button>
+      <button onclick="zoomOut()" title="Zoom out">&minus;</button>
+      <button onclick="fitToScreen()" title="Fit">&#x26F6;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal">
+    <h2>Import JSON Data</h2>
+    <textarea id="import-json" placeholder="Paste your JSON data here..."></textarea>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-primary" onclick="importJSON()">Import</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DATA ============
+let data = {
+  businessLines: [],
+  people: [],
+  functions: []
+};
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function save() {
+  localStorage.setItem('hubcycle-orgchart', JSON.stringify(data));
+  renderChart();
+}
+
+function load() {
+  const stored = localStorage.getItem('hubcycle-orgchart');
+  if (stored) {
+    try { data = JSON.parse(stored); } catch(e) { console.error(e); }
+  }
+  // Seed demo data if empty
+  if (!data.businessLines.length && !data.functions.length && !data.people.length) {
+    seedDemo();
+  }
+}
+
+function seedDemo() {
+  data.businessLines = [
+    { id: 'bl1', name: 'Executive', color: '#2d3436' },
+    { id: 'bl2', name: 'Sales', color: '#0984e3' },
+    { id: 'bl3', name: 'Sourcing', color: '#00b894' },
+    { id: 'bl4', name: 'Quality', color: '#e17055' },
+    { id: 'bl5', name: 'Finance', color: '#6c5ce7' },
+    { id: 'bl6', name: 'Operations', color: '#fdcb6e' },
+  ];
+  data.people = [
+    { id: 'p1', name: 'Alice Martin', title: 'CEO', photo: '' },
+    { id: 'p2', name: 'Bob Dupont', title: 'Head of Sales', photo: '' },
+    { id: 'p3', name: 'Clara Wang', title: 'Head of Sourcing', photo: '' },
+    { id: 'p4', name: 'David Leroy', title: 'Quality Manager', photo: '' },
+    { id: 'p5', name: 'Eva Schmidt', title: 'CFO', photo: '' },
+    { id: 'p6', name: 'Frank Barre', title: 'COO', photo: '' },
+  ];
+  data.functions = [
+    { id: 'f1', name: 'CEO', businessLineId: 'bl1', reportsTo: '', dottedTo: '', peopleIds: ['p1'] },
+    { id: 'f2', name: 'Sales Director', businessLineId: 'bl2', reportsTo: 'f1', dottedTo: '', peopleIds: ['p2'] },
+    { id: 'f3', name: 'Sourcing Director', businessLineId: 'bl3', reportsTo: 'f1', dottedTo: '', peopleIds: ['p3'] },
+    { id: 'f4', name: 'Quality Manager', businessLineId: 'bl4', reportsTo: 'f1', dottedTo: 'f3', peopleIds: ['p4'] },
+    { id: 'f5', name: 'CFO', businessLineId: 'bl5', reportsTo: 'f1', dottedTo: '', peopleIds: ['p5'] },
+    { id: 'f6', name: 'COO', businessLineId: 'bl6', reportsTo: 'f1', dottedTo: '', peopleIds: ['p6'] },
+  ];
+  save();
+}
+
+// ============ TABS ============
+document.querySelectorAll('.sidebar-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).style.display = '';
+    // Close any open edit panels
+    document.querySelectorAll('.edit-panel').forEach(p => p.classList.remove('open'));
+  });
+});
+
+// ============ RENDER LISTS ============
+function renderLists() {
+  renderBLList();
+  renderPeopleList();
+  renderFuncList();
+}
+
+function renderBLList() {
+  const ul = document.getElementById('bl-list');
+  ul.innerHTML = data.businessLines.map(bl => `
+    <li onclick="editBusinessLine('${bl.id}')">
+      <div class="item-info">
+        <div class="item-color" style="background:${bl.color}"></div>
+        <div>
+          <div class="item-name">${esc(bl.name)}</div>
+          <div class="item-sub">${data.functions.filter(f=>f.businessLineId===bl.id).length} functions</div>
+        </div>
+      </div>
+    </li>
+  `).join('');
+}
+
+function renderPeopleList() {
+  const ul = document.getElementById('people-list');
+  ul.innerHTML = data.people.map(p => `
+    <li onclick="editPerson('${p.id}')">
+      <div class="item-info">
+        ${p.photo ? `<img class="item-avatar" src="${esc(p.photo)}" onerror="this.style.display='none'">` : `<div class="item-avatar" style="display:flex;align-items:center;justify-content:center;font-weight:700;color:#636e72;font-size:13px;">${initials(p.name)}</div>`}
+        <div>
+          <div class="item-name">${esc(p.name)}</div>
+          <div class="item-sub">${esc(p.title)}</div>
+        </div>
+      </div>
+    </li>
+  `).join('');
+}
+
+function renderFuncList() {
+  const ul = document.getElementById('func-list');
+  ul.innerHTML = data.functions.map(f => {
+    const bl = data.businessLines.find(b=>b.id===f.businessLineId);
+    const ppl = f.peopleIds.map(pid => data.people.find(p=>p.id===pid)).filter(Boolean);
+    return `
+    <li onclick="editFunction('${f.id}')">
+      <div class="item-info">
+        <div class="item-color" style="background:${bl?bl.color:'#ccc'}"></div>
+        <div>
+          <div class="item-name">${esc(f.name)}</div>
+          <div class="item-sub">${ppl.map(p=>p.name).join(', ') || 'Unassigned'}</div>
+        </div>
+      </div>
+    </li>`;
+  }).join('');
+}
+
+// ============ EDIT BUSINESS LINE ============
+function editBusinessLine(id) {
+  const panel = document.getElementById('edit-bl');
+  const isNew = !id;
+  const bl = isNew ? null : data.businessLines.find(b=>b.id===id);
+  document.getElementById('edit-bl-title').textContent = isNew ? 'Add Business Line' : 'Edit Business Line';
+  document.getElementById('bl-id').value = id || '';
+  document.getElementById('bl-name').value = bl ? bl.name : '';
+  document.getElementById('bl-color').value = bl ? bl.color : '#0984e3';
+  document.getElementById('bl-delete-btn').style.display = isNew ? 'none' : '';
+  panel.classList.add('open');
+}
+
+function saveBusinessLine() {
+  const id = document.getElementById('bl-id').value;
+  const name = document.getElementById('bl-name').value.trim();
+  if (!name) return;
+  const color = document.getElementById('bl-color').value;
+  if (id) {
+    const bl = data.businessLines.find(b=>b.id===id);
+    bl.name = name; bl.color = color;
+  } else {
+    data.businessLines.push({ id: uid(), name, color });
+  }
+  save(); renderLists();
+  closePanel('edit-bl');
+}
+
+function deleteBusinessLine() {
+  const id = document.getElementById('bl-id').value;
+  data.businessLines = data.businessLines.filter(b=>b.id!==id);
+  data.functions.forEach(f => { if (f.businessLineId===id) f.businessLineId=''; });
+  save(); renderLists();
+  closePanel('edit-bl');
+}
+
+// ============ EDIT PERSON ============
+function editPerson(id) {
+  const panel = document.getElementById('edit-person');
+  const isNew = !id;
+  const p = isNew ? null : data.people.find(x=>x.id===id);
+  document.getElementById('edit-person-title').textContent = isNew ? 'Add Person' : 'Edit Person';
+  document.getElementById('person-id').value = id || '';
+  document.getElementById('person-name').value = p ? p.name : '';
+  document.getElementById('person-title').value = p ? p.title : '';
+  document.getElementById('person-photo').value = p ? p.photo : '';
+  document.getElementById('person-delete-btn').style.display = isNew ? 'none' : '';
+  updatePhotoPreview();
+  panel.classList.add('open');
+}
+
+function savePerson() {
+  const id = document.getElementById('person-id').value;
+  const name = document.getElementById('person-name').value.trim();
+  if (!name) return;
+  const title = document.getElementById('person-title').value.trim();
+  const photo = document.getElementById('person-photo').value.trim();
+  if (id) {
+    const p = data.people.find(x=>x.id===id);
+    p.name = name; p.title = title; p.photo = photo;
+  } else {
+    data.people.push({ id: uid(), name, title, photo });
+  }
+  save(); renderLists();
+  closePanel('edit-person');
+}
+
+function deletePerson() {
+  const id = document.getElementById('person-id').value;
+  data.people = data.people.filter(p=>p.id!==id);
+  data.functions.forEach(f => { f.peopleIds = f.peopleIds.filter(pid=>pid!==id); });
+  save(); renderLists();
+  closePanel('edit-person');
+}
+
+function handlePhotoUpload(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('person-photo').value = e.target.result;
+    updatePhotoPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function updatePhotoPreview() {
+  const url = document.getElementById('person-photo').value;
+  const preview = document.getElementById('person-photo-preview');
+  if (url) {
+    preview.innerHTML = `<img src="${esc(url)}" onerror="this.parentNode.innerHTML='<span>?</span>'">`;
+  } else {
+    preview.innerHTML = '<span>?</span>';
+  }
+}
+document.getElementById('person-photo').addEventListener('input', updatePhotoPreview);
+
+// ============ EDIT FUNCTION ============
+function editFunction(id) {
+  const panel = document.getElementById('edit-function');
+  const isNew = !id;
+  const fn = isNew ? null : data.functions.find(f=>f.id===id);
+  document.getElementById('edit-func-title').textContent = isNew ? 'Add Function' : 'Edit Function';
+  document.getElementById('func-id').value = id || '';
+  document.getElementById('func-name').value = fn ? fn.name : '';
+
+  // Business lines dropdown
+  const blSel = document.getElementById('func-bl');
+  blSel.innerHTML = '<option value="">-- Select --</option>' +
+    data.businessLines.map(bl => `<option value="${bl.id}" ${fn && fn.businessLineId===bl.id?'selected':''}>${esc(bl.name)}</option>`).join('');
+
+  // Reports to dropdown (exclude self)
+  const otherFuncs = data.functions.filter(f => f.id !== id);
+  const reportsToSel = document.getElementById('func-reports-to');
+  reportsToSel.innerHTML = '<option value="">-- None (top-level) --</option>' +
+    otherFuncs.map(f => `<option value="${f.id}" ${fn && fn.reportsTo===f.id?'selected':''}>${esc(f.name)}</option>`).join('');
+
+  const dottedToSel = document.getElementById('func-dotted-to');
+  dottedToSel.innerHTML = '<option value="">-- None --</option>' +
+    otherFuncs.map(f => `<option value="${f.id}" ${fn && fn.dottedTo===f.id?'selected':''}>${esc(f.name)}</option>`).join('');
+
+  // People checkboxes
+  const cbContainer = document.getElementById('func-people-checkboxes');
+  cbContainer.innerHTML = data.people.map(p => `
+    <label><input type="checkbox" value="${p.id}" ${fn && fn.peopleIds.includes(p.id)?'checked':''}> ${esc(p.name)} <span style="color:var(--text-muted);font-size:11px;">${esc(p.title)}</span></label>
+  `).join('');
+
+  document.getElementById('func-delete-btn').style.display = isNew ? 'none' : '';
+  panel.classList.add('open');
+}
+
+function saveFunction() {
+  const id = document.getElementById('func-id').value;
+  const name = document.getElementById('func-name').value.trim();
+  if (!name) return;
+  const businessLineId = document.getElementById('func-bl').value;
+  const reportsTo = document.getElementById('func-reports-to').value;
+  const dottedTo = document.getElementById('func-dotted-to').value;
+  const peopleIds = Array.from(document.querySelectorAll('#func-people-checkboxes input:checked')).map(cb=>cb.value);
+  if (id) {
+    const fn = data.functions.find(f=>f.id===id);
+    fn.name = name; fn.businessLineId = businessLineId; fn.reportsTo = reportsTo;
+    fn.dottedTo = dottedTo; fn.peopleIds = peopleIds;
+  } else {
+    data.functions.push({ id: uid(), name, businessLineId, reportsTo, dottedTo, peopleIds });
+  }
+  save(); renderLists();
+  closePanel('edit-function');
+}
+
+function deleteFunction() {
+  const id = document.getElementById('func-id').value;
+  // Remove references
+  data.functions.forEach(f => {
+    if (f.reportsTo === id) f.reportsTo = '';
+    if (f.dottedTo === id) f.dottedTo = '';
+  });
+  data.functions = data.functions.filter(f=>f.id!==id);
+  save(); renderLists();
+  closePanel('edit-function');
+}
+
+function closePanel(panelId) {
+  document.getElementById(panelId).classList.remove('open');
+}
+
+// ============ CHART RENDERING ============
+let transform = { x: 0, y: 0, scale: 1 };
+
+const NODE_W = 220;
+const NODE_H = 100;
+const H_GAP = 40;
+const V_GAP = 60;
+
+function renderChart() {
+  const svg = document.getElementById('org-svg');
+  const container = document.getElementById('chart-container');
+  const rect = container.getBoundingClientRect();
+
+  // Build tree
+  const roots = [];
+  const nodeMap = {};
+  data.functions.forEach(f => {
+    nodeMap[f.id] = { ...f, children: [], x: 0, y: 0 };
+  });
+  data.functions.forEach(f => {
+    if (f.reportsTo && nodeMap[f.reportsTo]) {
+      nodeMap[f.reportsTo].children.push(nodeMap[f.id]);
+    } else {
+      roots.push(nodeMap[f.id]);
+    }
+  });
+
+  // Layout tree (top-down)
+  let nextX = 0;
+  function layoutNode(node, depth) {
+    node.y = depth * (NODE_H + V_GAP);
+    if (node.children.length === 0) {
+      node.x = nextX;
+      nextX += NODE_W + H_GAP;
+    } else {
+      node.children.forEach(c => layoutNode(c, depth + 1));
+      const first = node.children[0].x;
+      const last = node.children[node.children.length - 1].x;
+      node.x = (first + last) / 2;
+    }
+  }
+  roots.forEach(r => layoutNode(r, 0));
+
+  // Collect all nodes flat
+  const allNodes = Object.values(nodeMap);
+
+  if (allNodes.length === 0) {
+    svg.innerHTML = `<text x="${rect.width/2}" y="${rect.height/2}" text-anchor="middle" fill="#b2bec3" font-size="16">Add business lines, people, and functions to build your org chart</text>`;
+    return;
+  }
+
+  // Build SVG
+  let svgContent = '';
+
+  // Defs for clip paths and shadows
+  svgContent += `<defs>
+    <clipPath id="avatar-clip"><circle cx="16" cy="16" r="16"/></clipPath>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+  </defs>`;
+
+  // Draw group with transform
+  svgContent += `<g id="chart-group" transform="translate(${transform.x},${transform.y}) scale(${transform.scale})">`;
+
+  // Draw solid links
+  allNodes.forEach(node => {
+    if (node.reportsTo && nodeMap[node.reportsTo]) {
+      const parent = nodeMap[node.reportsTo];
+      const x1 = parent.x + NODE_W/2;
+      const y1 = parent.y + NODE_H;
+      const x2 = node.x + NODE_W/2;
+      const y2 = node.y;
+      const midY = (y1 + y2) / 2;
+      svgContent += `<path class="link-solid" d="M${x1},${y1} C${x1},${midY} ${x2},${midY} ${x2},${y2}"/>`;
+    }
+  });
+
+  // Draw dotted links
+  allNodes.forEach(node => {
+    if (node.dottedTo && nodeMap[node.dottedTo]) {
+      const target = nodeMap[node.dottedTo];
+      const x1 = node.x + NODE_W/2;
+      const y1 = node.y + NODE_H/2;
+      const x2 = target.x + NODE_W/2;
+      const y2 = target.y + NODE_H/2;
+      svgContent += `<path class="link-dotted" d="M${x1},${y1} L${x2},${y2}"/>`;
+    }
+  });
+
+  // Draw nodes
+  allNodes.forEach(node => {
+    const bl = data.businessLines.find(b=>b.id===node.businessLineId);
+    const color = bl ? bl.color : '#b2bec3';
+    const people = node.peopleIds.map(pid => data.people.find(p=>p.id===pid)).filter(Boolean);
+
+    svgContent += `<g class="org-node" transform="translate(${node.x},${node.y})" onclick="editFunction('${node.id}')">`;
+    // Card background
+    svgContent += `<rect class="node-bg" x="0" y="0" width="${NODE_W}" height="${NODE_H}" filter="url(#shadow)"/>`;
+    // Color stripe at top
+    svgContent += `<rect class="node-stripe" x="0" y="0" width="${NODE_W}" height="6" fill="${color}"/>`;
+
+    // Function name
+    svgContent += `<text class="node-function" x="${NODE_W/2}" y="26" text-anchor="middle">${esc(node.name)}</text>`;
+
+    if (people.length === 1) {
+      const p = people[0];
+      // Single person: avatar + name + title
+      if (p.photo) {
+        svgContent += `<image href="${esc(p.photo)}" x="14" y="38" width="32" height="32" clip-path="url(#avatar-clip)" preserveAspectRatio="xMidYMid slice"/>`;
+        svgContent += `<circle cx="30" cy="54" r="16" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+      } else {
+        svgContent += `<circle cx="30" cy="54" r="16" fill="${color}20" stroke="${color}" stroke-width="1.5"/>`;
+        svgContent += `<text x="30" y="58" text-anchor="middle" font-size="11" font-weight="700" fill="${color}">${initials(p.name)}</text>`;
+      }
+      svgContent += `<text class="node-name" x="54" y="50">${esc(truncate(p.name, 18))}</text>`;
+      svgContent += `<text class="node-title" x="54" y="64">${esc(truncate(p.title, 22))}</text>`;
+    } else if (people.length > 1) {
+      // Multiple people: show avatars in a row
+      const startX = NODE_W/2 - (people.length * 18);
+      people.forEach((p, i) => {
+        const cx = startX + i * 36 + 16;
+        if (p.photo) {
+          svgContent += `<image href="${esc(p.photo)}" x="${cx-12}" y="36" width="24" height="24" clip-path="url(#avatar-clip)" preserveAspectRatio="xMidYMid slice"/>`;
+          svgContent += `<circle cx="${cx}" cy="48" r="12" fill="none" stroke="${color}" stroke-width="1"/>`;
+        } else {
+          svgContent += `<circle cx="${cx}" cy="48" r="12" fill="${color}20" stroke="${color}" stroke-width="1"/>`;
+          svgContent += `<text x="${cx}" y="52" text-anchor="middle" font-size="9" font-weight="700" fill="${color}">${initials(p.name)}</text>`;
+        }
+      });
+      const names = people.map(p=>p.name.split(' ')[0]).join(', ');
+      svgContent += `<text class="node-name" x="${NODE_W/2}" y="78" text-anchor="middle" font-size="10">${esc(truncate(names, 30))}</text>`;
+    } else {
+      svgContent += `<text x="${NODE_W/2}" y="58" text-anchor="middle" font-size="11" fill="#b2bec3" font-style="italic">Unassigned</text>`;
+    }
+
+    // Business line label
+    if (bl) {
+      svgContent += `<text x="${NODE_W/2}" y="${NODE_H - 6}" text-anchor="middle" font-size="9" fill="${color}" font-weight="600">${esc(bl.name).toUpperCase()}</text>`;
+    }
+
+    svgContent += `</g>`;
+  });
+
+  svgContent += '</g>';
+  svg.innerHTML = svgContent;
+
+  // Auto-fit on first render
+  if (!window._hasRendered) {
+    window._hasRendered = true;
+    setTimeout(fitToScreen, 100);
+  }
+}
+
+function fitToScreen() {
+  const container = document.getElementById('chart-container');
+  const rect = container.getBoundingClientRect();
+  const allNodes = [];
+  data.functions.forEach(f => allNodes.push(f));
+
+  // Recalculate positions (same logic as render)
+  const nodeMap = {};
+  data.functions.forEach(f => { nodeMap[f.id] = { ...f, children: [], x: 0, y: 0 }; });
+  const roots = [];
+  data.functions.forEach(f => {
+    if (f.reportsTo && nodeMap[f.reportsTo]) {
+      nodeMap[f.reportsTo].children.push(nodeMap[f.id]);
+    } else {
+      roots.push(nodeMap[f.id]);
+    }
+  });
+  let nextX = 0;
+  function layoutNode(node, depth) {
+    node.y = depth * (NODE_H + V_GAP);
+    if (node.children.length === 0) { node.x = nextX; nextX += NODE_W + H_GAP; }
+    else {
+      node.children.forEach(c => layoutNode(c, depth + 1));
+      node.x = (node.children[0].x + node.children[node.children.length-1].x) / 2;
+    }
+  }
+  roots.forEach(r => layoutNode(r, 0));
+
+  const nodes = Object.values(nodeMap);
+  if (!nodes.length) return;
+
+  const minX = Math.min(...nodes.map(n=>n.x));
+  const maxX = Math.max(...nodes.map(n=>n.x)) + NODE_W;
+  const minY = Math.min(...nodes.map(n=>n.y));
+  const maxY = Math.max(...nodes.map(n=>n.y)) + NODE_H;
+
+  const chartW = maxX - minX;
+  const chartH = maxY - minY;
+  const pad = 60;
+
+  const scaleX = (rect.width - pad*2) / chartW;
+  const scaleY = (rect.height - pad*2) / chartH;
+  transform.scale = Math.min(scaleX, scaleY, 1.2);
+  transform.x = (rect.width - chartW * transform.scale) / 2 - minX * transform.scale;
+  transform.y = (rect.height - chartH * transform.scale) / 2 - minY * transform.scale;
+
+  updateTransform();
+}
+
+function updateTransform() {
+  const g = document.getElementById('chart-group');
+  if (g) g.setAttribute('transform', `translate(${transform.x},${transform.y}) scale(${transform.scale})`);
+}
+
+function zoomIn() { transform.scale = Math.min(transform.scale * 1.2, 3); updateTransform(); }
+function zoomOut() { transform.scale = Math.max(transform.scale / 1.2, 0.2); updateTransform(); }
+
+// Pan & zoom
+(function() {
+  const container = document.getElementById('chart-container');
+  let dragging = false, startX, startY, startTx, startTy;
+
+  container.addEventListener('mousedown', e => {
+    if (e.target.closest('.org-node')) return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    startTx = transform.x; startTy = transform.y;
+    container.classList.add('grabbing');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    transform.x = startTx + (e.clientX - startX);
+    transform.y = startTy + (e.clientY - startY);
+    updateTransform();
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+    container.classList.remove('grabbing');
+  });
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.92 : 1.08;
+    const rect = container.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const newScale = Math.min(Math.max(transform.scale * delta, 0.15), 3);
+    transform.x = mx - (mx - transform.x) * (newScale / transform.scale);
+    transform.y = my - (my - transform.y) * (newScale / transform.scale);
+    transform.scale = newScale;
+    updateTransform();
+  }, { passive: false });
+})();
+
+// ============ IMPORT / EXPORT ============
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hubcycle-orgchart.json';
+  a.click();
+}
+
+function showImportModal() {
+  document.getElementById('import-modal').classList.add('open');
+  document.getElementById('import-json').value = '';
+}
+
+function closeModal() {
+  document.getElementById('import-modal').classList.remove('open');
+}
+
+function importJSON() {
+  try {
+    const parsed = JSON.parse(document.getElementById('import-json').value);
+    if (parsed.businessLines && parsed.people && parsed.functions) {
+      data = parsed;
+      save();
+      renderLists();
+      closeModal();
+      setTimeout(fitToScreen, 100);
+    } else {
+      alert('Invalid format. JSON must contain businessLines, people, and functions arrays.');
+    }
+  } catch(e) {
+    alert('Invalid JSON: ' + e.message);
+  }
+}
+
+function exportSVG() {
+  const svg = document.getElementById('org-svg');
+  const clone = svg.cloneNode(true);
+  const container = document.getElementById('chart-container');
+  const rect = container.getBoundingClientRect();
+  clone.setAttribute('width', rect.width);
+  clone.setAttribute('height', rect.height);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+  // Inline critical styles
+  const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+  styleEl.textContent = `
+    .node-bg { fill: white; stroke: #ddd; stroke-width: 1.5; }
+    .node-function { font-family: -apple-system, sans-serif; font-size: 13px; font-weight: 700; fill: #2d3436; }
+    .node-name { font-family: -apple-system, sans-serif; font-size: 12px; fill: #636e72; }
+    .node-title { font-family: -apple-system, sans-serif; font-size: 10px; fill: #b2bec3; }
+    .link-solid { fill: none; stroke: #b2bec3; stroke-width: 1.5; }
+    .link-dotted { fill: none; stroke: #b2bec3; stroke-width: 1.5; stroke-dasharray: 6 4; }
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  `;
+  clone.insertBefore(styleEl, clone.firstChild);
+
+  const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hubcycle-orgchart.svg';
+  a.click();
+}
+
+// ============ UTILS ============
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function initials(name) {
+  return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.slice(0, max-1) + '...' : str;
+}
+
+// ============ INIT ============
+load();
+renderLists();
+renderChart();
+</script>
+</body>
+</html>
