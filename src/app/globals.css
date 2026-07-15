@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * PP Valve is Hubcycle's licensed heading font (see brand Drive folder
+ * 3 - FONTS / PP VALVE). Drop the .woff2 files into /public/fonts to enable it;
+ * Manrope is used as fallback so the site renders correctly without them.
+ */
+@font-face {
+  font-family: "PP Valve";
+  src: url("/fonts/PPValve-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PP Valve";
+  src: url("/fonts/PPValve-Plain.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-valve: "PP Valve";
+}
+
+body {
+  @apply bg-white text-ink font-body antialiased;
+}
+
+h1, h2, h3 {
+  @apply font-heading;
+}
+
+.card {
+  @apply rounded-blob border border-cloud bg-white p-6 shadow-sm;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors;
+}
+.btn-primary {
+  @apply btn bg-deep text-white hover:bg-ink;
+}
+.btn-coral {
+  @apply btn bg-coral text-white hover:opacity-90;
+}
+.btn-ghost {
+  @apply btn border border-deep/20 text-deep hover:bg-cloud;
+}
+
+.input {
+  @apply w-full rounded-xl border border-deep/20 bg-white px-4 py-2.5 text-sm outline-none focus:border-deep;
+}
+
+.label {
+  @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-deep/70;
+}
+
+/* Print styles: reports become the PDF. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .print-page {
+    break-inside: avoid;
+  }
+  .card {
+    box-shadow: none;
+    border-color: #e5e5e5;
+  }
+  @page {
+    margin: 14mm;
+  }
+}
