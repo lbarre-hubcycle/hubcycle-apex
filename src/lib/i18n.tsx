@@ -61,6 +61,11 @@ const DICT = {
   "recruit.awaiting": { en: "Awaiting completion", fr: "En attente de passation" },
   "recruit.none": { en: "No invitations yet.", fr: "Aucune invitation pour le moment." },
   "recruit.delete": { en: "Delete", fr: "Supprimer" },
+  "recruit.convert": { en: "Convert to employee", fr: "Convertir en collaborateur·rice" },
+  "recruit.convertConfirm": {
+    en: "Convert this candidate to an employee? Their report will move to the employee views (Dynamics, Coach, Growth).",
+    fr: "Convertir ce·tte candidat·e en collaborateur·rice ? Son rapport basculera dans les vues collaborateurs (Dynamics, Coach, Growth).",
+  },
   "report.fullTitle": { en: "Full assessment report", fr: "Rapport d’évaluation complet" },
   "report.confidential": { en: "Confidential — HR & hiring manager only", fr: "Confidentiel — réservé RH et manager recruteur" },
   "report.digest": { en: "Candidate digest", fr: "Synthèse candidat" },

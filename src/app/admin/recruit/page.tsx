@@ -35,6 +35,16 @@ export default function RecruitPage() {
     await refresh();
   }
 
+  async function convertToEmployee(id: string) {
+    if (!window.confirm(t("recruit.convertConfirm"))) return;
+    await fetch(`/api/people/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "employee" }),
+    });
+    await refresh();
+  }
+
   function copyLink(p: Person) {
     const url = `${window.location.origin}/a/${p.token}`;
     void navigator.clipboard.writeText(url);
@@ -174,6 +184,15 @@ export default function RecruitPage() {
                               {copiedId === p.id ? t("recruit.copied") : t("recruit.copyLink")}
                             </button>
                           )}
+                          {p.kind === "candidate" ? (
+                            <button
+                              onClick={() => convertToEmployee(p.id)}
+                              className="btn-ghost !px-3 !py-1.5 !text-xs"
+                              title={t("recruit.convert")}
+                            >
+                              {t("recruit.convert")}
+                            </button>
+                          ) : null}
                           <button
                             onClick={() => remove(p.id)}
                             className="text-xs text-ink/30 hover:text-coral"

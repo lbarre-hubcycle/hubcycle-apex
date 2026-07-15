@@ -46,6 +46,17 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
       .catch(() => setMissing(true));
   }, [id]);
 
+  async function convertToEmployee() {
+    if (!data || !window.confirm(t("recruit.convertConfirm"))) return;
+    await fetch(`/api/people/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "employee" }),
+    });
+    const res = await fetch(`/api/people/${id}`);
+    if (res.ok) setData(await res.json());
+  }
+
   if (missing) return <p className="text-ink/50">—</p>;
   if (!data) return <p className="text-ink/50">…</p>;
 
@@ -111,6 +122,11 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           ← {t("common.back")}
         </Link>
         <div className="flex gap-3">
+          {person.kind === "candidate" ? (
+            <button onClick={convertToEmployee} className="btn-ghost">
+              {t("recruit.convert")}
+            </button>
+          ) : null}
           <Link href={`/admin/people/${person.id}/digest`} className="btn-ghost">
             {t("report.openDigest")}
           </Link>
