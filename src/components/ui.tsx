@@ -6,9 +6,14 @@ import { useI18n } from "@/lib/i18n";
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (
-    <span className={`font-heading text-xl tracking-tight ${light ? "text-white" : "text-deep"}`}>
-      apex<span className="text-coral">.</span>
-    </span>
+    <Link href="/" className="inline-flex items-baseline gap-1.5">
+      <span className={`font-heading text-xl tracking-tight ${light ? "text-white" : "text-deep"}`}>
+        apex<span className="text-coral">.</span>
+      </span>
+      <span className={`text-xs font-medium ${light ? "text-white/70" : "text-deep/50"}`}>
+        by Hubcycle
+      </span>
+    </Link>
   );
 }
 
@@ -55,9 +60,7 @@ export function AdminShell({ children, demoMode }: { children: React.ReactNode; 
     <div className="min-h-screen bg-[#FBFBFB]">
       <header className="no-print sticky top-0 z-20 border-b border-cloud bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-5 py-3">
-          <Link href="/admin">
-            <Logo />
-          </Link>
+          <Logo />
           <nav className="flex flex-1 flex-wrap items-center gap-1 text-sm">
             {NAV.map((n) => (
               <Link
