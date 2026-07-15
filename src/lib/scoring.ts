@@ -57,14 +57,21 @@ export function isComplete(answers: Answers): boolean {
 const likertTo100 = (x: number) => Math.round(((x - 1) / 4) * 100);
 
 export function computeResults(answers: Answers, role?: RoleDef): Results {
-  // --- Profiles: count forced choices (each profile can be chosen 0–6 times).
+  // --- Profiles: count forced choices, normalized by how often each profile
+  // actually appears in the pair plan (balanced by design, but computed here
+  // so the questionnaire can evolve without touching the scoring).
   const chosen: Record<ProfileId, number> = Object.fromEntries(
+    PROFILE_IDS.map((p) => [p, 0])
+  ) as Record<ProfileId, number>;
+  const appearances: Record<ProfileId, number> = Object.fromEntries(
     PROFILE_IDS.map((p) => [p, 0])
   ) as Record<ProfileId, number>;
 
   for (const section of SECTIONS) {
     for (const item of section.items) {
       if (item.kind !== "pair") continue;
+      appearances[item.a.profile]++;
+      appearances[item.b.profile]++;
       const a = answers[item.id];
       if (a === "a") chosen[item.a.profile]++;
       else if (a === "b") chosen[item.b.profile]++;
@@ -72,7 +79,7 @@ export function computeResults(answers: Answers, role?: RoleDef): Results {
   }
 
   const profileScores = Object.fromEntries(
-    PROFILE_IDS.map((p) => [p, Math.round((chosen[p] / 6) * 100)])
+    PROFILE_IDS.map((p) => [p, Math.round((chosen[p] / Math.max(appearances[p], 1)) * 100)])
   ) as Record<ProfileId, number>;
 
   const ranked = [...PROFILE_IDS].sort((a, b) => profileScores[b] - profileScores[a]);

@@ -40,8 +40,8 @@ export default function MethodologyPage() {
             <li>
               <strong className="text-deep">{fr ? "Profil naturel" : "Natural profile"}</strong> —{" "}
               {fr
-                ? "24 paires à choix forcé mesurent 8 styles de contribution. Le format ipsatif (deux affirmations positives) réduit la désirabilité sociale."
-                : "24 forced-choice pairs measure 8 contribution styles. The ipsative format (two positive statements) reduces social desirability."}
+                ? "36 paires à choix forcé mesurent 8 styles de contribution : 28 paires « forces » en tournoi complet (chaque profil opposé à chaque autre exactement une fois, aucun profil favorisé) et 8 paires « sous pression » où les deux options sont des points de vigilance — un format encore moins sensible à la désirabilité sociale."
+                : "36 forced-choice pairs measure 8 contribution styles: 28 “strengths” pairs in a complete round-robin (each profile faces every other exactly once, so no profile is favored) and 8 “under pressure” pairs where both options are watch-outs — a format even less sensitive to social desirability."}
             </li>
             <li>
               <strong className="text-deep">{fr ? "Adéquation au poste" : "Role match"}</strong> —{" "}
@@ -58,8 +58,8 @@ export default function MethodologyPage() {
             <li>
               <strong className="text-deep">{fr ? "Alignement culturel" : "Culture alignment"}</strong> —{" "}
               {fr
-                ? "21 items mesurent les 7 valeurs du Manifeste Hubcycle, de « Super fit » à « Misfit »."
-                : "21 items measure the 7 values of the Hubcycle Manifesto, from “Super fit” to “Misfit”."}
+                ? "21 items mesurent les 7 valeurs du Manifeste Hubcycle, de « Super fit » à « Misfit ». Les items sont mélangés aux items de style de travail (pas de bloc « valeurs » identifiable), formulés en arbitrages plutôt qu’en vertus, et un tiers est inversé — répondre « 5 » partout ne maximise plus le score."
+                : "21 items measure the 7 values of the Hubcycle Manifesto, from “Super fit” to “Misfit”. Items are mixed with the work-style items (no recognizable “values” block), phrased as trade-offs rather than virtues, and one third is reverse-keyed — straight-lining “5” no longer maximizes the score."}
             </li>
           </ul>
         </div>
