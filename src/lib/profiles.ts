@@ -605,3 +605,42 @@ export function synergyNote(a: ProfileId, b: ProfileId): { en: string; fr: strin
   };
   return notes[key] ?? null;
 }
+
+/**
+ * Position on the team map. Uses the top-3 profiles with quadratic weighting:
+ * ipsative scores sum to a constant, so averaging all 8 anchors collapses
+ * everyone to the center of the map — the dominant profiles must dominate
+ * the position for the map to be readable.
+ */
+export function mapPosition(scores: Record<ProfileId, number>): { x: number; y: number } {
+  const ranked = (Object.entries(scores) as [ProfileId, number][])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+  let x = 0;
+  let y = 0;
+  let total = 0;
+  for (const [pid, score] of ranked) {
+    const def = PROFILE_MAP[pid];
+    const w = Math.max(score, 1) ** 2;
+    x += def.mapX * w;
+    y += def.mapY * w;
+    total += w;
+  }
+  return { x: x / total, y: y / total };
+}
+
+/** Top-2 profile ids by score (natural zone). */
+export function topProfiles(scores: Record<ProfileId, number>, n = 2): ProfileId[] {
+  return (Object.entries(scores) as [ProfileId, number][])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, n)
+    .map(([pid]) => pid);
+}
+
+/** Bottom-2 profile ids by score (stretch zone). */
+export function bottomProfiles(scores: Record<ProfileId, number>, n = 2): ProfileId[] {
+  return (Object.entries(scores) as [ProfileId, number][])
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, n)
+    .map(([pid]) => pid);
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { PROFILES } from "@/lib/profiles";
 import { VALUES } from "@/lib/culture";
 import { useI18n } from "@/lib/i18n";
@@ -10,8 +11,10 @@ import { DistBars, Scale5 } from "@/components/charts";
 export default function InsightsPage() {
   const { t, l } = useI18n();
   const { db } = useAdminState();
+  const [selected, setSelected] = useState<string>("all");
 
-  const done = (db?.people ?? []).filter((p) => p.results);
+  const all = (db?.people ?? []).filter((p) => p.results);
+  const done = selected === "all" ? all : all.filter((p) => p.teamId === selected);
   const employees = done.filter((p) => p.kind === "employee");
   const candidates = done.filter((p) => p.kind === "candidate");
 
@@ -33,6 +36,29 @@ export default function InsightsPage() {
   return (
     <div>
       <SectionTitle title={t("insights.title")} sub={t("insights.sub")} />
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <button
+          onClick={() => setSelected("all")}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            selected === "all" ? "bg-deep text-white" : "border border-deep/20 text-deep hover:bg-cloud"
+          }`}
+        >
+          {t("dyn.allHubcycle")}
+        </button>
+        {(db?.teams ?? []).map((team) => (
+          <button
+            key={team.id}
+            onClick={() => setSelected(team.id)}
+            className={`rounded-full px-4 py-2 text-sm font-medium ${
+              selected === team.id ? "bg-deep text-white" : "border border-deep/20 text-deep hover:bg-cloud"
+            }`}
+          >
+            {team.name}
+          </button>
+        ))}
+      </div>
+
       {done.length === 0 ? (
         <div className="card text-ink/40">{t("insights.none")}</div>
       ) : (

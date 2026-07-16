@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ROLE_MAP } from "@/data/roles";
-import { PROFILE_MAP, synergyNote } from "@/lib/profiles";
+import { PROFILE_MAP, mapPosition, synergyNote } from "@/lib/profiles";
 import { COMPETENCY_MAP } from "@/lib/competencies";
 import { CULTURE_BANDS, VALUES } from "@/lib/culture";
 import { useI18n } from "@/lib/i18n";
@@ -16,21 +16,6 @@ interface Payload {
   person: Person;
   people: Person[];
   teams: Team[];
-}
-
-/** Position on the team map = score-weighted average of profile anchors. */
-function mapPosition(scores: Record<ProfileId, number>): { x: number; y: number } {
-  let x = 0;
-  let y = 0;
-  let total = 0;
-  for (const [pid, score] of Object.entries(scores)) {
-    const def = PROFILE_MAP[pid as ProfileId];
-    const w = Math.max(score, 1);
-    x += def.mapX * w;
-    y += def.mapY * w;
-    total += w;
-  }
-  return { x: x / total, y: y / total };
 }
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
