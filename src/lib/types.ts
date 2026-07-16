@@ -57,6 +57,8 @@ export interface ProfileDef {
   /** Short label for charts (radar axes, distribution bars). */
   shortName: L10n;
   tagline: L10n;
+  /** Narrative portrait: how this profile operates, where it thrives, what the team feels. */
+  overview: L10n;
   color: string; // brand accent used in charts
   strengths: L10n[];
   watchouts: L10n[];
@@ -74,6 +76,14 @@ export interface ValueDef {
   name: L10n;
   scope: L10n; // "As individuals" / "As a collective" / "With the external world"
   summary: L10n;
+  /** Why a high score (> 3.5): what the answers indicate. */
+  highWhy: L10n;
+  /** Concrete attitudes typically observed when alignment is strong. */
+  highExamples: L10n[];
+  /** Why a low score (< 2.7): what the answers indicate. */
+  lowWhy: L10n;
+  /** Concrete attitudes that may show up — hypotheses to probe in interview. */
+  lowExamples: L10n[];
 }
 
 export interface FacetDef {

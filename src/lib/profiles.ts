@@ -17,6 +17,10 @@ export const PROFILES: ProfileDef[] = [
       en: "Execution, ownership, decision-making under pressure.",
       fr: "Exécution, responsabilité, décision sous pression.",
     },
+    overview: {
+      en: "Drivers are at their best when a result is at stake and someone needs to take the wheel. They convert ambiguity into decisions and decisions into movement, absorbing pressure that would stall others. They tend to thrive when the goal is explicit, ownership is clear and the path is theirs to choose — and to lose energy in environments governed by committees and long validation chains. Around them the team feels the tempo rise: things ship faster, sometimes at the cost of alignment or documentation.",
+      fr: "Les Pilotes sont à leur meilleur quand un résultat est en jeu et qu’il faut prendre le volant. Ils transforment l’ambiguïté en décisions et les décisions en mouvement, en absorbant une pression qui en paralyserait d’autres. Ils s’épanouissent quand l’objectif est explicite, la responsabilité claire et le chemin libre — et perdent de l’énergie dans les environnements gouvernés par les comités et les longues chaînes de validation. Autour d’eux, l’équipe sent le rythme monter : les choses aboutissent plus vite, parfois au prix de l’alignement ou de la documentation.",
+    },
     color: "#FF684D",
     strengths: [
       {
@@ -81,6 +85,10 @@ export const PROFILES: ProfileDef[] = [
     tagline: {
       en: "Coaching, problem-solving, translating data into action.",
       fr: "Coaching, résolution de problèmes, traduction des données en action.",
+    },
+    overview: {
+      en: "Race Engineers perform through others: their impact shows in colleagues who improve, decisions that get sharper, problems whose root cause finally surfaces. They pair analysis with a human touch — their feedback lands because it is both precise and considerate. They thrive in roles with genuine interaction, where the progression of the people around them is visible, and lose energy in solitary or purely transactional work. In a team they act as a multiplier: performance quietly rises around them.",
+      fr: "Les Ingénieurs de course performent à travers les autres : leur impact se lit dans des collègues qui progressent, des décisions plus nettes, des problèmes dont la cause racine émerge enfin. Ils allient l’analyse à un vrai sens du contact — leur feedback porte parce qu’il est à la fois précis et attentionné. Ils s’épanouissent dans les rôles à forte interaction, où la progression des personnes autour d’eux est visible, et perdent de l’énergie dans un travail solitaire ou purement transactionnel. Dans une équipe, ils jouent le rôle de multiplicateur : la performance monte discrètement autour d’eux.",
     },
     color: "#00414F",
     strengths: [
@@ -147,6 +155,10 @@ export const PROFILES: ProfileDef[] = [
       en: "Planning, prioritization, anticipating scenarios.",
       fr: "Planification, priorisation, anticipation des scénarios.",
     },
+    overview: {
+      en: "Strategists bring the map. Before the team moves, they have framed the problem, ranked the options and anticipated the ways things could go wrong. They thrive when there is real time to think ahead and a genuine say in direction; permanent firefighting drains them, because it burns the very anticipation they excel at. Their signature in a team is fewer surprises: risks are named early, priorities survive contact with reality, and effort lands where it matters.",
+      fr: "Les Stratèges apportent la carte. Avant que l’équipe ne bouge, ils ont cadré le problème, hiérarchisé les options et anticipé ce qui pourrait mal tourner. Ils s’épanouissent quand il y a un vrai temps pour penser en avance et une vraie prise sur la direction ; l’urgence permanente les épuise, car elle consume précisément l’anticipation qui fait leur force. Leur signature dans une équipe : moins de surprises — les risques sont nommés tôt, les priorités résistent au contact du réel, et l’effort porte là où il compte.",
+    },
     color: "#0F2024",
     strengths: [
       {
@@ -211,6 +223,10 @@ export const PROFILES: ProfileDef[] = [
     tagline: {
       en: "Reliability, quality, operational excellence.",
       fr: "Fiabilité, qualité, excellence opérationnelle.",
+    },
+    overview: {
+      en: "Chief Mechanics make performance repeatable. Where others improvise, they build the routine, the checklist, the standard that still holds once attention has moved elsewhere. Quality is personal to them: what leaves their hands works, every time. They thrive with clear ownership of critical operations and a quality bar that is actually respected, and they suffer in chronically improvised environments. The team experiences them as stability — and occasionally as friction, when speed gets chosen over craft.",
+      fr: "Les Chefs mécanos rendent la performance reproductible. Là où d’autres improvisent, ils construisent la routine, la checklist, le standard qui tient encore quand l’attention est passée ailleurs. La qualité est pour eux une affaire personnelle : ce qui sort de leurs mains fonctionne, à chaque fois. Ils s’épanouissent avec une responsabilité claire sur des opérations critiques et une exigence de qualité réellement respectée, et souffrent dans les environnements chroniquement improvisés. L’équipe les vit comme une stabilité — et parfois comme une friction, quand la vitesse est préférée au travail bien fait.",
     },
     color: "#00414F",
     strengths: [
@@ -277,6 +293,10 @@ export const PROFILES: ProfileDef[] = [
       en: "Speed, teamwork, adaptability.",
       fr: "Vitesse, esprit d’équipe, adaptabilité.",
     },
+    overview: {
+      en: "Pit Crew profiles are the connective tissue of a team. They read the situation, spot where the bottleneck is, and go there — without being asked and without needing the credit. Intensity energizes them: coordinated sprints, launches, crunch moments where everyone's timing matters. They thrive in collective, fast-moving contexts and wilt in siloed or slow ones. Their fingerprint is a team that flows: fewer dropped balls, faster handoffs, and someone always covering the gap nobody owns.",
+      fr: "Les profils Pit Crew sont le tissu conjonctif d’une équipe. Ils lisent la situation, repèrent où se trouve le goulot d’étranglement, et y vont — sans qu’on le leur demande et sans avoir besoin d’en tirer le crédit. L’intensité les stimule : sprints coordonnés, lancements, moments de rush où la synchronisation de chacun compte. Ils s’épanouissent dans les contextes collectifs et rapides, et s’étiolent dans les environnements cloisonnés ou lents. Leur empreinte : une équipe qui coule de source — moins de balles perdues, des passations plus rapides, et toujours quelqu’un pour couvrir le trou dont personne n’est responsable.",
+    },
     color: "#FF684D",
     strengths: [
       {
@@ -341,6 +361,10 @@ export const PROFILES: ProfileDef[] = [
     tagline: {
       en: "Data, insight, pattern recognition.",
       fr: "Données, analyse, détection de signaux.",
+    },
+    overview: {
+      en: "Telemetry Engineers trust what can be verified. They dig beneath opinions to find the number, the pattern, the root cause — and they change their mind when the data says so, which is rarer than it sounds. They thrive when questions are genuinely open and rigor is actually valued; they lose energy when conclusions precede evidence or when speed systematically beats accuracy. A team that includes one makes fewer confident mistakes: decisions get audited before reality audits them.",
+      fr: "Les Ingénieurs télémétrie font confiance à ce qui peut être vérifié. Ils creusent sous les opinions pour trouver le chiffre, la tendance, la cause racine — et ils changent d’avis quand les données le disent, ce qui est plus rare qu’il n’y paraît. Ils s’épanouissent quand les questions sont réellement ouvertes et la rigueur véritablement valorisée ; ils perdent de l’énergie quand les conclusions précèdent les preuves ou quand la vitesse l’emporte systématiquement sur la justesse. Une équipe qui en compte un commet moins d’erreurs assurées : les décisions sont auditées avant que la réalité ne s’en charge.",
     },
     color: "#A1D0DB",
     strengths: [
@@ -407,6 +431,10 @@ export const PROFILES: ProfileDef[] = [
       en: "Innovation, systems thinking, optimization.",
       fr: "Innovation, pensée systémique, optimisation.",
     },
+    overview: {
+      en: "Aerodynamicists see the system — and its hidden drag. They question defaults, connect ideas across domains, and find the simplification everyone else walks past. They thrive where there is room to experiment and a real tolerance for iteration, and they suffocate under \"we've always done it this way\". Their trace in a team is renewal: processes stay alive instead of calcifying — occasionally at the price of stability, when they redesign something that merely needed maintaining.",
+      fr: "Les Aérodynamiciens voient le système — et ses frottements cachés. Ils questionnent les évidences, connectent des idées de domaines différents et trouvent la simplification devant laquelle tout le monde passe. Ils s’épanouissent là où il y a de l’espace pour expérimenter et une vraie tolérance à l’itération, et s’asphyxient sous le « on a toujours fait comme ça ». Leur trace dans une équipe : le renouvellement — les processus restent vivants au lieu de se figer, parfois au prix de la stabilité, quand ils redessinent ce qui demandait seulement d’être entretenu.",
+    },
     color: "#D4B6FF",
     strengths: [
       {
@@ -471,6 +499,10 @@ export const PROFILES: ProfileDef[] = [
     tagline: {
       en: "Leadership, alignment, vision.",
       fr: "Leadership, alignement, vision.",
+    },
+    overview: {
+      en: "Team Principals hold the collective together and point it somewhere. They create alignment — sometimes by deciding, more often by making the goal so clear that decisions become obvious. They instinctively think in terms of conditions: what does this group need in order to perform? They thrive with a real mandate over people and direction, and lose energy executing alone in a corner. Their mark on a team is a shared sense of direction: people know where they are going, and why it matters.",
+      fr: "Les Team Principals tiennent le collectif ensemble et lui donnent un cap. Ils créent l’alignement — parfois en tranchant, plus souvent en rendant l’objectif si clair que les décisions deviennent évidentes. Ils pensent instinctivement en termes de conditions : de quoi ce groupe a-t-il besoin pour performer ? Ils s’épanouissent avec un vrai mandat sur les personnes et la direction, et perdent de l’énergie à exécuter seuls dans leur coin. Leur marque sur une équipe : un sens partagé de la direction — chacun sait où l’on va, et pourquoi cela compte.",
     },
     color: "#00414F",
     strengths: [

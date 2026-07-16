@@ -180,9 +180,44 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           </div>
           <p className="mt-3 text-sm text-ink/60">{l(band.description)}</p>
           <div className="mt-5 divide-y divide-cloud/70">
-            {VALUES.map((v) => (
-              <Scale5 key={v.id} label={l(v.name)} sublabel={l(v.scope)} value={results.valueScores[v.id]} />
-            ))}
+            {VALUES.map((v) => {
+              const score = results.valueScores[v.id];
+              const insight =
+                score > 3.5
+                  ? { title: t("report.valueHigh"), why: v.highWhy, examples: v.highExamples, low: false }
+                  : score < 2.7
+                    ? { title: t("report.valueLow"), why: v.lowWhy, examples: v.lowExamples, low: true }
+                    : null;
+              return (
+                <div key={v.id}>
+                  <Scale5 label={l(v.name)} sublabel={l(v.scope)} value={score} />
+                  {insight ? (
+                    <div
+                      className={`mb-4 rounded-xl p-3.5 text-xs leading-relaxed ${
+                        insight.low ? "border border-coral/25 bg-coral/5" : "bg-cloud/50"
+                      }`}
+                    >
+                      <div
+                        className={`font-semibold uppercase tracking-wide ${
+                          insight.low ? "text-coral" : "text-deep/70"
+                        }`}
+                      >
+                        {insight.title}
+                      </div>
+                      <p className="mt-1.5 text-ink/70">{l(insight.why)}</p>
+                      <ul className="mt-2 space-y-1 text-ink/70">
+                        {insight.examples.map((ex, i) => (
+                          <li key={i} className="flex gap-1.5">
+                            <span className={insight.low ? "text-coral" : "text-deep/50"}>•</span>
+                            {l(ex)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
 

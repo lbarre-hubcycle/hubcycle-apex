@@ -27,7 +27,7 @@ export function ProfileHero({ results }: { results: Results }) {
               <div className="text-sm text-ink/60">{l(primary.tagline)}</div>
             </div>
           </div>
-          <p className="mt-4 text-sm text-ink/70">{l(primary.teamContribution)}</p>
+          <p className="mt-4 text-sm leading-relaxed text-ink/70">{l(primary.overview)}</p>
           <div className="mt-5 rounded-2xl bg-cloud/60 p-4">
             <div className="text-xs font-semibold uppercase tracking-wide text-deep/60">
               {t("report.secondary")}

@@ -74,6 +74,8 @@ const DICT = {
     fr: "Cette synthèse décrit uniquement la personnalité et le style de contribution. Elle ne contient aucune comparaison avec les valeurs Hubcycle, les facteurs de succès du poste ou les équipes, et peut être partagée avec la personne évaluée.",
   },
   "report.downloadPdf": { en: "Download PDF", fr: "Télécharger le PDF" },
+  "report.valueHigh": { en: "Strong alignment — what this typically looks like", fr: "Alignement marqué — ce que cela donne concrètement" },
+  "report.valueLow": { en: "Gap to explore — attitudes that may show up", fr: "Écart à explorer — attitudes possibles" },
   "report.openDigest": { en: "Open candidate digest", fr: "Ouvrir la synthèse candidat" },
   "report.profile": { en: "Natural profile", fr: "Profil naturel" },
   "report.secondary": { en: "Secondary profile", fr: "Profil secondaire" },
