@@ -58,8 +58,8 @@ export default function MethodologyPage() {
             <li>
               <strong className="text-deep">{fr ? "Alignement culturel" : "Culture alignment"}</strong> —{" "}
               {fr
-                ? "21 items mesurent les 7 valeurs du Manifeste Hubcycle, de « Super fit » à « Misfit ». Les items sont mélangés aux items de style de travail (pas de bloc « valeurs » identifiable), formulés en arbitrages plutôt qu’en vertus, et un tiers est inversé — répondre « 5 » partout ne maximise plus le score."
-                : "21 items measure the 7 values of the Hubcycle Manifesto, from “Super fit” to “Misfit”. Items are mixed with the work-style items (no recognizable “values” block), phrased as trade-offs rather than virtues, and one third is reverse-keyed — straight-lining “5” no longer maximizes the score."}
+                ? "21 items mesurent les 7 valeurs du Manifeste Hubcycle, de « Super fit » à « Misfit ». Les items sont mélangés aux items de style de travail (pas de bloc « valeurs » identifiable) et codés à ≈50/50 : sur la moitié des items, répondre « 5 » signale l’alignement ; sur l’autre moitié (items inversés), « 5 » signale l’écart. Répondre « 5 » partout donne donc un score sous la moyenne."
+                : "21 items measure the 7 values of the Hubcycle Manifesto, from “Super fit” to “Misfit”. Items are mixed with the work-style items (no recognizable “values” block) and keyed ≈50/50: on half the items answering “5” signals alignment; on the other half (reverse-keyed), “5” signals distance. Straight-lining “5” therefore lands below the midpoint."}
             </li>
           </ul>
         </div>

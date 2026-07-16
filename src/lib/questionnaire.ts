@@ -12,8 +12,10 @@ import type { FacetId, Item, L10n, LikertItem, PairItem, ProfileId, ValueId } fr
  *   Each profile appears exactly 9 times (7 strengths + 2 shadows).
  *
  * Part 2 — 45 Likert items in ONE mixed section → 8 work-style facets (24
- *   items, 1 in 3 reverse-scored) and 7 Manifesto values (21 items, 1 in 3
- *   reverse-scored). Facet and value items are interleaved so that culture
+ *   items, 1 in 3 reverse-scored) and 7 Manifesto values (21 items, keyed
+ *   ≈50/50: 11 reverse-scored / 10 positively keyed, so agreeing with
+ *   everything lands BELOW neutral). Facet and value items are interleaved
+ *   so that culture
  *   items are not presented as a recognizable "values test", and same-
  *   construct items sit far apart. Reverse-keyed items make straight-lining
  *   ineffective, and value items are phrased as trade-offs between two goods
@@ -280,34 +282,37 @@ const valueLikert = (id: string, value: ValueId, text: L10n, reversed?: boolean)
 });
 
 /**
- * 21 value items: 3 per value — 2 phrased as trade-offs between two
- * legitimate preferences (no obviously "right" answer), 1 reverse-keyed —
- * ordered in rounds of 7 (one item per value per round).
+ * 21 value items: 3 per value, keyed ≈50/50 — 11 reverse-keyed (agreeing
+ * signals distance from the value) and 10 positively keyed (phrased as
+ * trade-offs between two legitimate preferences, not virtues). Reversed
+ * items are spread across the three rounds rather than grouped, so no
+ * pattern is detectable. Ordered in rounds of 7 (one item per value per
+ * round).
  */
 const CULTURE_ITEMS: LikertItem[] = [
-  // Round 1
+  // Round 1 — 3 positive / 4 reversed
   valueLikert("c1", "discernment", { en: "I am comfortable deciding with 70% of the information.", fr: "Je suis à l’aise pour décider avec 70 % de l’information." }),
-  valueLikert("c4", "boldness", { en: "I challenge the way things are done, even when it is uncomfortable.", fr: "Je remets en question les façons de faire, même quand c’est inconfortable." }),
-  valueLikert("c7", "performance", { en: "I keep improving a piece of work even after it is already “good enough”.", fr: "Je continue d’améliorer un travail même quand il est déjà « suffisant »." }),
-  valueLikert("c10", "communication", { en: "I express complex ideas simply and briefly.", fr: "J’exprime les idées complexes de façon simple et brève." }),
-  valueLikert("c13", "collaboration", { en: "I measure my success by the team's result more than my own.", fr: "Je mesure mon succès au résultat de l’équipe plus qu’au mien." }),
-  valueLikert("c16", "pragmatism", { en: "I prefer a simple solution today over a perfect one next month.", fr: "Je préfère une solution simple aujourd’hui qu’une solution parfaite le mois prochain." }),
-  valueLikert("c19", "integrity", { en: "I say the uncomfortable truth rather than let a misunderstanding settle in.", fr: "Je dis la vérité inconfortable plutôt que de laisser un malentendu s’installer." }),
-  // Round 2
-  valueLikert("c2", "discernment", { en: "I would rather take a calculated risk than miss an opportunity.", fr: "Je préfère prendre un risque calculé que laisser passer une opportunité." }),
-  valueLikert("c5", "boldness", { en: "I treat failure primarily as information for the next attempt.", fr: "Je considère l’échec d’abord comme une information pour l’essai suivant." }),
-  valueLikert("c8", "performance", { en: "I actively seek feedback to improve, even when it stings.", fr: "Je recherche activement le feedback pour progresser, même quand il pique." }),
-  valueLikert("c11", "communication", { en: "I share what I know early, even when it is not yet complete or validated.", fr: "Je partage tôt ce que je sais, même quand ce n’est pas encore complet ou validé." }),
-  valueLikert("c14", "collaboration", { en: "In a debate, I would rather the best idea win than my idea.", fr: "Dans un débat, je préfère que la meilleure idée gagne plutôt que la mienne." }),
-  valueLikert("c17", "pragmatism", { en: "When something blocks me, I look for a solution before an explanation.", fr: "Quand quelque chose me bloque, je cherche une solution avant une explication." }),
-  valueLikert("c20", "integrity", { en: "I flag my own mistakes early, even when it costs me.", fr: "Je signale mes erreurs tôt, même quand cela me coûte." }),
-  // Round 3 — reverse-keyed
-  valueLikert("c3", "discernment", { en: "I prefer to wait for near-certainty before committing, even if the opportunity may pass.", fr: "Je préfère attendre une quasi-certitude avant de m’engager, même si l’opportunité risque de passer." }, true),
   valueLikert("c6", "boldness", { en: "When a method has proven itself, questioning it is mostly a waste of energy.", fr: "Quand une méthode a fait ses preuves, la remettre en question est surtout une perte d’énergie." }, true),
   valueLikert("c9", "performance", { en: "Once the goal is reached, I move on rather than look for what could still be improved.", fr: "Une fois l’objectif atteint, je passe à la suite plutôt que de chercher ce qui pourrait encore être amélioré." }, true),
+  valueLikert("c10", "communication", { en: "I express complex ideas simply and briefly.", fr: "J’exprime les idées complexes de façon simple et brève." }),
+  valueLikert("c14", "collaboration", { en: "Once my part is done well, the rest of the project is not really my concern.", fr: "Une fois ma partie bien faite, le reste du projet n’est plus vraiment mon affaire." }, true),
+  valueLikert("c16", "pragmatism", { en: "I prefer a simple solution today over a perfect one next month.", fr: "Je préfère une solution simple aujourd’hui qu’une solution parfaite le mois prochain." }),
+  valueLikert("c20", "integrity", { en: "I would rather fix my mistakes quietly than draw attention to them.", fr: "Je préfère corriger mes erreurs discrètement plutôt que d’attirer l’attention dessus." }, true),
+  // Round 2 — 4 positive / 3 reversed
+  valueLikert("c3", "discernment", { en: "I prefer to wait for near-certainty before committing, even if the opportunity may pass.", fr: "Je préfère attendre une quasi-certitude avant de m’engager, même si l’opportunité risque de passer." }, true),
+  valueLikert("c4", "boldness", { en: "I challenge the way things are done, even when it is uncomfortable.", fr: "Je remets en question les façons de faire, même quand c’est inconfortable." }),
+  valueLikert("c7", "performance", { en: "I keep improving a piece of work even after it is already “good enough”.", fr: "Je continue d’améliorer un travail même quand il est déjà « suffisant »." }),
   valueLikert("c12", "communication", { en: "I prefer to hold information back until it is complete and validated.", fr: "Je préfère garder une information tant qu’elle n’est pas complète et validée." }, true),
-  valueLikert("c15", "collaboration", { en: "I work best when I can move forward on my scope without depending on others.", fr: "Je travaille mieux quand je peux avancer sur mon périmètre sans dépendre des autres." }, true),
+  valueLikert("c13", "collaboration", { en: "I measure my success by the team's result more than my own.", fr: "Je mesure mon succès au résultat de l’équipe plus qu’au mien." }),
   valueLikert("c18", "pragmatism", { en: "I find it hard to hand over work that is not polished, even when time is short.", fr: "J’ai du mal à livrer un travail qui n’est pas peaufiné, même quand le temps presse." }, true),
+  valueLikert("c19", "integrity", { en: "I say the uncomfortable truth rather than let a misunderstanding settle in.", fr: "Je dis la vérité inconfortable plutôt que de laisser un malentendu s’installer." }),
+  // Round 3 — 3 positive / 4 reversed
+  valueLikert("c2", "discernment", { en: "I focus on the immediate result; the long term usually takes care of itself.", fr: "Je me concentre sur le résultat immédiat ; le long terme finit généralement par s’arranger." }, true),
+  valueLikert("c5", "boldness", { en: "I treat failure primarily as information for the next attempt.", fr: "Je considère l’échec d’abord comme une information pour l’essai suivant." }),
+  valueLikert("c8", "performance", { en: "Critical feedback is often more discouraging than useful.", fr: "Le feedback critique est souvent plus décourageant qu’utile." }, true),
+  valueLikert("c11", "communication", { en: "I share what I know early, even when it is not yet complete or validated.", fr: "Je partage tôt ce que je sais, même quand ce n’est pas encore complet ou validé." }),
+  valueLikert("c15", "collaboration", { en: "I work best when I can move forward on my scope without depending on others.", fr: "Je travaille mieux quand je peux avancer sur mon périmètre sans dépendre des autres." }, true),
+  valueLikert("c17", "pragmatism", { en: "When something blocks me, I look for a solution before an explanation.", fr: "Quand quelque chose me bloque, je cherche une solution avant une explication." }),
   valueLikert("c21", "integrity", { en: "I sometimes let a small ambiguity stand when clarifying it would create tension.", fr: "Il m’arrive de laisser passer une petite ambiguïté quand la clarifier créerait des tensions." }, true),
 ];
 
