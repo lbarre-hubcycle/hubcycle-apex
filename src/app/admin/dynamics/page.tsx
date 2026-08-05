@@ -375,6 +375,39 @@ export default function DynamicsPage() {
         )}
       </div>
 
+      {/* Profile coverage — full width */}
+      {members.length ? (
+        <div className="print-page card mt-4">
+          <h3 className="font-heading text-lg text-deep">{t("dyn.coverage")}</h3>
+          <div className="mt-4 grid gap-x-10 gap-y-3 md:grid-cols-2">
+            {coverage.map(({ prof, n }) => (
+              <div key={prof.id} className="flex items-center gap-3">
+                <div className="w-44 shrink-0 truncate text-sm font-medium text-ink">
+                  {prof.emoji} {l(prof.shortName)}
+                </div>
+                <div className="flex flex-1 items-center gap-1">
+                  {Array.from({ length: Math.max(members.length, 1) }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`h-3 flex-1 rounded-full ${i < n ? "bg-deep" : "bg-cloud"}`}
+                      style={{ maxWidth: 26 }}
+                    />
+                  ))}
+                </div>
+                <span
+                  className={`w-20 shrink-0 text-right text-xs font-semibold ${
+                    n === 0 ? "text-coral" : "text-deep"
+                  }`}
+                >
+                  {n === 0 ? t("dyn.gap") : n}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-ink/40">{t("dyn.coverageHint")}</p>
+        </div>
+      ) : null}
+
       {/* Insights */}
       {members.length ? (
         <div className="print-page card mt-4">
@@ -414,38 +447,6 @@ export default function DynamicsPage() {
         </div>
       ) : null}
 
-      {/* Profile coverage — full width */}
-      {members.length ? (
-        <div className="print-page card mt-4">
-          <h3 className="font-heading text-lg text-deep">{t("dyn.coverage")}</h3>
-          <div className="mt-4 grid gap-x-10 gap-y-3 md:grid-cols-2">
-            {coverage.map(({ prof, n }) => (
-              <div key={prof.id} className="flex items-center gap-3">
-                <div className="w-44 shrink-0 truncate text-sm font-medium text-ink">
-                  {prof.emoji} {l(prof.shortName)}
-                </div>
-                <div className="flex flex-1 items-center gap-1">
-                  {Array.from({ length: Math.max(members.length, 1) }, (_, i) => (
-                    <span
-                      key={i}
-                      className={`h-3 flex-1 rounded-full ${i < n ? "bg-deep" : "bg-cloud"}`}
-                      style={{ maxWidth: 26 }}
-                    />
-                  ))}
-                </div>
-                <span
-                  className={`w-20 shrink-0 text-right text-xs font-semibold ${
-                    n === 0 ? "text-coral" : "text-deep"
-                  }`}
-                >
-                  {n === 0 ? t("dyn.gap") : n}
-                </span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-ink/40">{t("dyn.coverageHint")}</p>
-        </div>
-      ) : null}
     </div>
   );
 }
