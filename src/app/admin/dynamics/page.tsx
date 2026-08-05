@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { PROFILES, PROFILE_MAP, mapPosition, topProfiles, bottomProfiles } from "@/lib/profiles";
 import { PROFILE_INSIGHTS, bareName } from "@/lib/profile-insights";
+import { teamDemand, demandTier, type TeamDemand } from "@/lib/team-demand";
 import { useI18n } from "@/lib/i18n";
 import { useAdminState } from "@/lib/useAdminState";
 import { PrintButton, SectionTitle } from "@/components/ui";
@@ -141,6 +142,16 @@ interface Insight {
   text: L10n;
 }
 
+/** "“success factor” (Role title)" example string from the demand drivers. */
+function exampleFor(td: TeamDemand, pid: ProfileId): L10n | null {
+  const ds = td.drivers[pid];
+  if (!ds.length) return null;
+  return {
+    en: ds.map((d) => `“${d.factor.en}” (${d.role.en})`).join(", "),
+    fr: ds.map((d) => `« ${d.factor.fr} » (${d.role.fr})`).join(", "),
+  };
+}
+
 /** Auto-generated reading of the team, Table-Group style. */
 function buildInsights(members: Person[]): Insight[] {
   const insights: Insight[] = [];
@@ -155,6 +166,9 @@ function buildInsights(members: Person[]): Insight[] {
     });
     return insights;
   }
+
+  // Role-aware demand: which profiles this team's fiches de poste rely on.
+  const td = teamDemand(members);
 
   // Strong representation: a profile in the natural zone of at least half
   // the team (min 2 people). A reliable strength — and a dynamic to watch:
@@ -171,14 +185,36 @@ function buildInsights(members: Person[]): Insight[] {
     const prof = PROFILE_MAP[pid];
     const name = bareName(prof.name);
     const ins = PROFILE_INSIGHTS[pid];
-    insights.push({
-      icon: prof.emoji,
-      tone: "strength",
-      text: {
-        en: `The team is strongly represented in the “${name.en}” role (${n} of ${members.length} members carry it naturally). ${prof.teamContribution.en} This strength is reliable — but a heavy focus on one role shapes the whole dynamic: ${ins.dominanceRisk.en.toLowerCase()}`,
-        fr: `L’équipe est fortement représentée dans le rôle « ${name.fr} » (${n} membres sur ${members.length} le portent naturellement). ${prof.teamContribution.fr} Cette force est fiable — mais une forte concentration sur un rôle façonne toute la dynamique : ${ins.dominanceRisk.fr.charAt(0).toLowerCase()}${ins.dominanceRisk.fr.slice(1)}`,
-      },
-    });
+    const tier = td ? demandTier(td.demand[pid]) : null;
+    const ex = td ? exampleFor(td, pid) : null;
+    if (tier === "key" && ex) {
+      insights.push({
+        icon: prof.emoji,
+        tone: "strength",
+        text: {
+          en: `The team is strongly represented in the “${name.en}” role (${n} of ${members.length}) — and that matches exactly what its roles require (e.g. ${ex.en}). A structural asset for this team. One watch-out at this concentration: ${ins.dominanceRisk.en.toLowerCase()}`,
+          fr: `L’équipe est fortement représentée dans le rôle « ${name.fr} » (${n} sur ${members.length}) — et c’est exactement ce que ses postes exigent (p. ex. ${ex.fr}). Un atout structurel pour cette équipe. Un point de vigilance à cette concentration : ${ins.dominanceRisk.fr.charAt(0).toLowerCase()}${ins.dominanceRisk.fr.slice(1)}`,
+        },
+      });
+    } else if (tier === "low") {
+      insights.push({
+        icon: prof.emoji,
+        tone: "info",
+        text: {
+          en: `The team is strongly represented in the “${name.en}” role (${n} of ${members.length}), yet its current roles rarely rely on it. Energy may flow into work the roles don’t actually need — channel this strength toward cross-team topics, and watch: ${ins.dominanceRisk.en.toLowerCase()}`,
+          fr: `L’équipe est fortement représentée dans le rôle « ${name.fr} » (${n} sur ${members.length}), alors que ses postes actuels y font peu appel. L’énergie peut se porter sur des travaux que les postes n’exigent pas — orientez cette force vers des sujets transverses, et attention : ${ins.dominanceRisk.fr.charAt(0).toLowerCase()}${ins.dominanceRisk.fr.slice(1)}`,
+        },
+      });
+    } else {
+      insights.push({
+        icon: prof.emoji,
+        tone: "strength",
+        text: {
+          en: `The team is strongly represented in the “${name.en}” role (${n} of ${members.length} members carry it naturally). ${prof.teamContribution.en} This strength is reliable — but a heavy focus on one role shapes the whole dynamic: ${ins.dominanceRisk.en.toLowerCase()}`,
+          fr: `L’équipe est fortement représentée dans le rôle « ${name.fr} » (${n} membres sur ${members.length} le portent naturellement). ${prof.teamContribution.fr} Cette force est fiable — mais une forte concentration sur un rôle façonne toute la dynamique : ${ins.dominanceRisk.fr.charAt(0).toLowerCase()}${ins.dominanceRisk.fr.slice(1)}`,
+        },
+      });
+    }
   }
 
   // Gaps: profiles in nobody's natural zone (top-2). Working-Genius-style
@@ -193,29 +229,53 @@ function buildInsights(members: Person[]): Insight[] {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
     .map(([pid]) => PROFILE_INSIGHTS[pid].focus);
-  const gaps = PROFILES.filter((p) => !naturalCounts.has(p.id));
-  for (const prof of gaps.slice(0, 3)) {
+  const gaps = PROFILES.filter((p) => !naturalCounts.has(p.id)).sort(
+    (a, b) => (td ? td.demand[b.id] - td.demand[a.id] : 0)
+  );
+  for (const prof of gaps.slice(0, 4)) {
     const ins = PROFILE_INSIGHTS[prof.id];
     const name = bareName(prof.name);
-    const overfocus =
-      carriedFocuses.length > 0
-        ? {
-            en: ` Without this role, the team may focus too much on ${carriedFocuses
-              .map((f) => f.en)
-              .join(", as well as ")} — while under-investing in ${ins.focus.en}.`,
-            fr: ` Sans ce rôle, l’équipe peut trop se concentrer sur ${carriedFocuses
-              .map((f) => f.fr)
-              .join(", ainsi que ")} — en sous-investissant ${ins.focus.fr}.`,
-          }
-        : { en: "", fr: "" };
-    insights.push({
-      icon: prof.emoji,
-      tone: "risk",
-      text: {
-        en: `The team is under-represented in the “${name.en}” role. ${ins.absenceImpact.en}${overfocus.en} Cover it consciously — assign it explicitly, or factor it into the next hire.`,
-        fr: `L’équipe est sous-représentée dans le rôle « ${name.fr} ». ${ins.absenceImpact.fr}${overfocus.fr} À couvrir consciemment — en l’assignant explicitement, ou en l’intégrant au prochain recrutement.`,
-      },
-    });
+    const tier = td ? demandTier(td.demand[prof.id]) : null;
+    const ex = td ? exampleFor(td, prof.id) : null;
+    if (tier === "key" && ex) {
+      insights.push({
+        icon: prof.emoji,
+        tone: "risk",
+        text: {
+          en: `Critical gap for this team: nobody carries the “${name.en}” role naturally, yet the team's own roles depend on it — e.g. ${ex.en}. ${ins.absenceImpact.en} For this team, cover it explicitly or make it a priority in the next hire.`,
+          fr: `Manque critique pour cette équipe : personne ne porte naturellement le rôle « ${name.fr} », alors que les postes de l’équipe en dépendent — p. ex. ${ex.fr}. ${ins.absenceImpact.fr} Pour cette équipe, couvrez-le explicitement ou faites-en une priorité du prochain recrutement.`,
+        },
+      });
+    } else if (tier === "low") {
+      insights.push({
+        icon: prof.emoji,
+        tone: "info",
+        text: {
+          en: `The “${name.en}” role is uncovered — but a minor gap here: this team's roles rarely rely on it. In a small organization, this is an acceptable trade-off; keep it in mind for cross-team topics rather than hiring.`,
+          fr: `Le rôle « ${name.fr} » n’est pas couvert — mais c’est un manque mineur ici : les postes de cette équipe y font peu appel. Dans une petite organisation, c’est un arbitrage acceptable ; gardez-le en tête pour les sujets transverses plutôt que pour un recrutement.`,
+        },
+      });
+    } else {
+      const overfocus =
+        carriedFocuses.length > 0
+          ? {
+              en: ` Without this role, the team may focus too much on ${carriedFocuses
+                .map((f) => f.en)
+                .join(", as well as ")} — while under-investing in ${ins.focus.en}.`,
+              fr: ` Sans ce rôle, l’équipe peut trop se concentrer sur ${carriedFocuses
+                .map((f) => f.fr)
+                .join(", ainsi que ")} — en sous-investissant ${ins.focus.fr}.`,
+            }
+          : { en: "", fr: "" };
+      insights.push({
+        icon: prof.emoji,
+        tone: "risk",
+        text: {
+          en: `The team is under-represented in the “${name.en}” role. ${ins.absenceImpact.en}${overfocus.en} Cover it consciously — assign it explicitly, or factor it into the next hire.`,
+          fr: `L’équipe est sous-représentée dans le rôle « ${name.fr} ». ${ins.absenceImpact.fr}${overfocus.fr} À couvrir consciemment — en l’assignant explicitement, ou en l’intégrant au prochain recrutement.`,
+        },
+      });
+    }
   }
   if (gaps.length === 0) {
     insights.push({
@@ -310,10 +370,13 @@ export default function DynamicsPage() {
   const scopeName =
     selected === "all" ? t("dyn.allHubcycle") : (db?.teams ?? []).find((tm) => tm.id === selected)?.name ?? "";
 
-  // Profile coverage: how many members carry each profile in their natural zone.
+  // Profile coverage: how many members carry each profile in their natural
+  // zone, plus how critical the profile is to this team's roles.
+  const demand = useMemo(() => teamDemand(members), [members]);
   const coverage = PROFILES.map((prof) => {
     const n = members.filter((m) => topProfiles(m.results!.profileScores).includes(prof.id)).length;
-    return { prof, n };
+    const tier = demand ? demandTier(demand.demand[prof.id]) : null;
+    return { prof, n, tier };
   });
 
   const dots: MapDot[] = spreadDots(
@@ -380,11 +443,24 @@ export default function DynamicsPage() {
         <div className="print-page card mt-4">
           <h3 className="font-heading text-lg text-deep">{t("dyn.coverage")}</h3>
           <div className="mt-4 grid gap-x-10 gap-y-3 md:grid-cols-2">
-            {coverage.map(({ prof, n }) => (
+            {coverage.map(({ prof, n, tier }) => (
               <div key={prof.id} className="flex items-center gap-3">
                 <div className="w-44 shrink-0 truncate text-sm font-medium text-ink">
                   {prof.emoji} {l(prof.shortName)}
                 </div>
+                {tier ? (
+                  <span
+                    className={`w-28 shrink-0 rounded-full px-2 py-0.5 text-center text-[10px] font-semibold ${
+                      tier === "key"
+                        ? "bg-coral/15 text-coral"
+                        : tier === "mid"
+                          ? "bg-deep/10 text-deep"
+                          : "bg-cloud text-ink/45"
+                    }`}
+                  >
+                    {t(tier === "key" ? "dyn.demandKey" : tier === "mid" ? "dyn.demandMid" : "dyn.demandLow")}
+                  </span>
+                ) : null}
                 <div className="flex flex-1 items-center gap-1">
                   {Array.from({ length: Math.max(members.length, 1) }, (_, i) => (
                     <span
