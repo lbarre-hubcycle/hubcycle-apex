@@ -164,6 +164,10 @@ const DICT = {
   "dyn.scatter": { en: "Team positioning", fr: "Positionnement de l’équipe" },
   "dyn.zoneNatural": { en: "Natural zone", fr: "Zone naturelle" },
   "dyn.zoneStretch": { en: "Stretch zone", fr: "Zone d’effort" },
+  "dyn.coverageHint": {
+    en: "Number of people carrying each profile in their natural zone.",
+    fr: "Nombre de personnes portant chaque profil en zone naturelle.",
+  },
   "dyn.gridLegend": {
     en: "★ primary profile · unmarked = secondary profile · stretch zone = the two lowest scores. A dashed cell means no member carries this profile naturally.",
     fr: "★ profil principal · sans marque = profil secondaire · zone d’effort = les deux scores les plus bas. Une case en pointillés signifie qu’aucun membre ne porte ce profil naturellement.",
