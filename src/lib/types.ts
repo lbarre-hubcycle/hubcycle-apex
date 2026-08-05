@@ -162,7 +162,10 @@ export interface Person {
   name: string;
   email?: string;
   roleId?: string;
+  /** Primary team (business line). */
   teamId?: string;
+  /** Secondary team (functional), for people who belong to two teams. */
+  functionalTeamId?: string;
   /** Employee id of this person's direct-line manager (assigned in the admin panel). */
   managerId?: string;
   /** Employee id of this person's dotted-line (functional) manager. */

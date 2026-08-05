@@ -365,7 +365,9 @@ export default function DynamicsPage() {
     [db]
   );
   const members: Person[] =
-    selected === "all" ? employees : employees.filter((p) => p.teamId === selected);
+    selected === "all"
+      ? employees
+      : employees.filter((p) => p.teamId === selected || p.functionalTeamId === selected);
 
   const scopeName =
     selected === "all" ? t("dyn.allHubcycle") : (db?.teams ?? []).find((tm) => tm.id === selected)?.name ?? "";

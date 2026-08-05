@@ -1,11 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ROLE_MAP } from "@/data/roles";
 import { PROFILE_MAP } from "@/lib/profiles";
 import { useI18n } from "@/lib/i18n";
 import { useAdminState } from "@/lib/useAdminState";
 import { SectionTitle } from "@/components/ui";
+
+/** Inline-editable name: click, type, Enter (or blur) to save. */
+function NameCell({ name, onSave }: { name: string; onSave: (name: string) => void }) {
+  const [value, setValue] = useState(name);
+  useEffect(() => setValue(name), [name]);
+  const commit = () => {
+    const v = value.trim();
+    if (v && v !== name) onSave(v);
+    else setValue(name);
+  };
+  return (
+    <input
+      className="w-40 rounded-lg border border-transparent bg-transparent px-2 py-1 font-medium text-ink outline-none transition-colors hover:border-deep/20 focus:border-deep focus:bg-white"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") setValue(name);
+      }}
+    />
+  );
+}
 
 /** Admin panel: teams, team assignment and manager assignment. */
 export default function SettingsPage() {
@@ -59,7 +82,7 @@ export default function SettingsPage() {
             <p className="text-sm text-ink/40">{t("settings.noTeams")}</p>
           ) : (
             teams.map((team) => {
-              const count = people.filter((p) => p.teamId === team.id).length;
+              const count = people.filter((p) => p.teamId === team.id || p.functionalTeamId === team.id).length;
               return (
                 <span
                   key={team.id}
@@ -98,6 +121,7 @@ export default function SettingsPage() {
       <div className="card overflow-x-auto !p-0">
         <div className="px-5 pt-5">
           <h3 className="font-heading text-lg text-deep">{t("settings.people")}</h3>
+          <p className="mt-1 text-xs text-ink/45">{t("settings.renameHint")}</p>
         </div>
         <table className="mt-3 w-full text-sm">
           <thead>
@@ -106,7 +130,8 @@ export default function SettingsPage() {
               <th className="px-5 py-3">{t("recruit.kind")}</th>
               <th className="px-5 py-3">{t("common.role")}</th>
               <th className="px-5 py-3">{t("report.profile")}</th>
-              <th className="px-5 py-3">{t("common.team")}</th>
+              <th className="px-5 py-3">{t("settings.teamBusiness")}</th>
+              <th className="px-5 py-3">{t("settings.teamFunctional")}</th>
               <th className="px-5 py-3">{t("settings.managerDirect")}</th>
               <th className="px-5 py-3">{t("settings.managerDotted")}</th>
             </tr>
@@ -117,7 +142,9 @@ export default function SettingsPage() {
               const primary = p.results ? PROFILE_MAP[p.results.primaryProfile] : undefined;
               return (
                 <tr key={p.id} className="border-b border-cloud/60">
-                  <td className="px-5 py-3 font-medium text-ink">{p.name}</td>
+                  <td className="px-5 py-3 font-medium text-ink">
+                    <NameCell name={p.name} onSave={(name) => patchPerson(p.id, { name })} />
+                  </td>
                   <td className="px-5 py-3 text-ink/60">
                     {p.kind === "candidate" ? t("recruit.candidate") : t("recruit.employee")}
                   </td>
@@ -127,7 +154,7 @@ export default function SettingsPage() {
                   </td>
                   <td className="px-5 py-3">
                     <select
-                      className="input !w-44 !py-1.5"
+                      className="input !w-40 !py-1.5"
                       value={p.teamId ?? ""}
                       onChange={(e) => patchPerson(p.id, { teamId: e.target.value })}
                     >
@@ -137,6 +164,22 @@ export default function SettingsPage() {
                           {team.name}
                         </option>
                       ))}
+                    </select>
+                  </td>
+                  <td className="px-5 py-3">
+                    <select
+                      className="input !w-40 !py-1.5"
+                      value={p.functionalTeamId ?? ""}
+                      onChange={(e) => patchPerson(p.id, { functionalTeamId: e.target.value })}
+                    >
+                      <option value="">—</option>
+                      {teams
+                        .filter((team) => team.id !== p.teamId)
+                        .map((team) => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
                     </select>
                   </td>
                   <td className="px-5 py-3">

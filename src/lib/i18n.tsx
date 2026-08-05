@@ -29,6 +29,12 @@ const DICT = {
   },
   "settings.people": { en: "Team & manager assignment", fr: "Affectation aux équipes et managers" },
   "settings.manager": { en: "Manager", fr: "Manager" },
+  "settings.teamBusiness": { en: "Team (business line)", fr: "Équipe (business line)" },
+  "settings.teamFunctional": { en: "Functional team", fr: "Équipe fonctionnelle" },
+  "settings.renameHint": {
+    en: "Click a name to edit it, then press Enter.",
+    fr: "Cliquez sur un nom pour le modifier, puis validez avec Entrée.",
+  },
   "settings.managerDirect": { en: "Direct manager", fr: "Manager hiérarchique" },
   "settings.managerDotted": { en: "Dotted-line manager", fr: "Manager fonctionnel (pointillé)" },
   "settings.noTeams": { en: "No teams yet — create the first one.", fr: "Aucune équipe pour le moment — créez la première." },

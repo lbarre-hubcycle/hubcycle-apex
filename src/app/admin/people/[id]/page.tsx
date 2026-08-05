@@ -64,7 +64,13 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
   const band = CULTURE_BANDS.find((b) => b.id === results.cultureBand)!;
   const team = person.teamId ? teams.find((tm) => tm.id === person.teamId) : undefined;
   const teammates = team
-    ? people.filter((p) => p.teamId === team.id && p.results && p.id !== person.id && p.kind === "employee")
+    ? people.filter(
+        (p) =>
+          (p.teamId === team.id || p.functionalTeamId === team.id) &&
+          p.results &&
+          p.id !== person.id &&
+          p.kind === "employee"
+      )
     : [];
 
   // Team complementarity: profiles the team lacks vs what this person brings.

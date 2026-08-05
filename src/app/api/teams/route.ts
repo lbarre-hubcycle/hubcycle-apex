@@ -18,7 +18,10 @@ export async function DELETE(req: Request) {
   const { id } = (await req.json()) as { id?: string };
   const db = await loadDb();
   db.teams = db.teams.filter((t) => t.id !== id);
-  for (const p of db.people) if (p.teamId === id) p.teamId = undefined;
+  for (const p of db.people) {
+    if (p.teamId === id) p.teamId = undefined;
+    if (p.functionalTeamId === id) p.functionalTeamId = undefined;
+  }
   await saveDb(db);
   return NextResponse.json({ ok: true });
 }
