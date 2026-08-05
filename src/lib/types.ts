@@ -163,8 +163,10 @@ export interface Person {
   email?: string;
   roleId?: string;
   teamId?: string;
-  /** Employee id of this person's manager (assigned in the admin panel). */
+  /** Employee id of this person's direct-line manager (assigned in the admin panel). */
   managerId?: string;
+  /** Employee id of this person's dotted-line (functional) manager. */
+  dottedManagerId?: string;
   language?: Lang;
   invitedAt: string;
   completedAt?: string;

@@ -107,7 +107,8 @@ export default function SettingsPage() {
               <th className="px-5 py-3">{t("common.role")}</th>
               <th className="px-5 py-3">{t("report.profile")}</th>
               <th className="px-5 py-3">{t("common.team")}</th>
-              <th className="px-5 py-3">{t("settings.manager")}</th>
+              <th className="px-5 py-3">{t("settings.managerDirect")}</th>
+              <th className="px-5 py-3">{t("settings.managerDotted")}</th>
             </tr>
           </thead>
           <tbody>
@@ -140,13 +141,29 @@ export default function SettingsPage() {
                   </td>
                   <td className="px-5 py-3">
                     <select
-                      className="input !w-48 !py-1.5"
+                      className="input !w-44 !py-1.5"
                       value={p.managerId ?? ""}
                       onChange={(e) => patchPerson(p.id, { managerId: e.target.value })}
                     >
                       <option value="">—</option>
                       {employees
                         .filter((m) => m.id !== p.id)
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                    </select>
+                  </td>
+                  <td className="px-5 py-3">
+                    <select
+                      className="input !w-44 !py-1.5"
+                      value={p.dottedManagerId ?? ""}
+                      onChange={(e) => patchPerson(p.id, { dottedManagerId: e.target.value })}
+                    >
+                      <option value="">—</option>
+                      {employees
+                        .filter((m) => m.id !== p.id && m.id !== p.managerId)
                         .map((m) => (
                           <option key={m.id} value={m.id}>
                             {m.name}

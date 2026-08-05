@@ -29,6 +29,8 @@ const DICT = {
   },
   "settings.people": { en: "Team & manager assignment", fr: "Affectation aux équipes et managers" },
   "settings.manager": { en: "Manager", fr: "Manager" },
+  "settings.managerDirect": { en: "Direct manager", fr: "Manager hiérarchique" },
+  "settings.managerDotted": { en: "Dotted-line manager", fr: "Manager fonctionnel (pointillé)" },
   "settings.noTeams": { en: "No teams yet — create the first one.", fr: "Aucune équipe pour le moment — créez la première." },
   "settings.membersCount": { en: "members", fr: "membres" },
   "nav.logout": { en: "Sign out", fr: "Déconnexion" },
