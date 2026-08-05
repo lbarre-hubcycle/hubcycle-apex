@@ -42,6 +42,7 @@ const NAV = [
   { href: "/admin/coach", key: "nav.coach" as const },
   { href: "/admin/growth", key: "nav.growth" as const },
   { href: "/admin/insights", key: "nav.insights" as const },
+  { href: "/admin/settings", key: "nav.settings" as const },
   { href: "/admin/methodology", key: "nav.methodology" as const },
 ];
 

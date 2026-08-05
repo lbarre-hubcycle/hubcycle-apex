@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { PROFILES, PROFILE_MAP, mapPosition, topProfiles, bottomProfiles } from "@/lib/profiles";
 import { PROFILE_INSIGHTS, bareName } from "@/lib/profile-insights";
-import { ROLE_MAP } from "@/data/roles";
 import { useI18n } from "@/lib/i18n";
 import { useAdminState } from "@/lib/useAdminState";
 import { PrintButton, SectionTitle } from "@/components/ui";
@@ -157,21 +156,27 @@ function buildInsights(members: Person[]): Insight[] {
     return insights;
   }
 
-  // Center of gravity: most frequent primary profile.
-  const primaryCount = new Map<ProfileId, Person[]>();
-  for (const m of members) {
-    const pid = m.results!.primaryProfile;
-    primaryCount.set(pid, [...(primaryCount.get(pid) ?? []), m]);
-  }
-  const [topPid, topMembers] = [...primaryCount.entries()].sort((a, b) => b[1].length - a[1].length)[0];
-  if (topMembers.length >= 2) {
-    const prof = PROFILE_MAP[topPid];
+  // Strong representation: a profile in the natural zone of at least half
+  // the team (min 2 people). A reliable strength — and a dynamic to watch:
+  // a heavy focus on one role shapes how the whole team behaves.
+  const repCounts = new Map<ProfileId, number>();
+  for (const m of members)
+    topProfiles(m.results!.profileScores).forEach((pid) =>
+      repCounts.set(pid, (repCounts.get(pid) ?? 0) + 1)
+    );
+  const strong = [...repCounts.entries()]
+    .filter(([, n]) => n >= Math.max(2, Math.ceil(members.length / 2)))
+    .sort((a, b) => b[1] - a[1]);
+  for (const [pid, n] of strong.slice(0, 3)) {
+    const prof = PROFILE_MAP[pid];
+    const name = bareName(prof.name);
+    const ins = PROFILE_INSIGHTS[pid];
     insights.push({
       icon: prof.emoji,
       tone: "strength",
       text: {
-        en: `Center of gravity: ${topMembers.length} of ${members.length} members lead with ${prof.name.en}. ${prof.teamContribution.en} With several of them, this strength is reliable — and its watch-out (${prof.watchouts[0].en.toLowerCase()}) can become a collective blind spot.`,
-        fr: `Centre de gravité : ${topMembers.length} membres sur ${members.length} ont ${prof.name.fr} comme profil principal. ${prof.teamContribution.fr} À plusieurs, cette force est fiable — et son point de vigilance (${prof.watchouts[0].fr.toLowerCase()}) peut devenir un angle mort collectif.`,
+        en: `The team is strongly represented in the “${name.en}” role (${n} of ${members.length} members carry it naturally). ${prof.teamContribution.en} This strength is reliable — but a heavy focus on one role shapes the whole dynamic: ${ins.dominanceRisk.en.toLowerCase()}`,
+        fr: `L’équipe est fortement représentée dans le rôle « ${name.fr} » (${n} membres sur ${members.length} le portent naturellement). ${prof.teamContribution.fr} Cette force est fiable — mais une forte concentration sur un rôle façonne toute la dynamique : ${ins.dominanceRisk.fr.charAt(0).toLowerCase()}${ins.dominanceRisk.fr.slice(1)}`,
       },
     });
   }
@@ -292,9 +297,8 @@ function buildInsights(members: Person[]): Insight[] {
 
 export default function DynamicsPage() {
   const { t, l } = useI18n();
-  const { db, refresh } = useAdminState();
+  const { db } = useAdminState();
   const [selected, setSelected] = useState<string>("all");
-  const [teamName, setTeamName] = useState("");
 
   const employees = useMemo(
     () => (db?.people ?? []).filter((p) => p.kind === "employee" && p.results),
@@ -320,26 +324,6 @@ export default function DynamicsPage() {
   );
 
   const insights = buildInsights(members);
-
-  async function createTeam(e: React.FormEvent) {
-    e.preventDefault();
-    await fetch("/api/teams", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: teamName }),
-    });
-    setTeamName("");
-    await refresh();
-  }
-
-  async function assign(personId: string, teamId: string) {
-    await fetch(`/api/people/${personId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ teamId }),
-    });
-    await refresh();
-  }
 
   return (
     <div>
@@ -370,17 +354,6 @@ export default function DynamicsPage() {
             {team.name}
           </button>
         ))}
-        <form onSubmit={createTeam} className="ml-auto flex items-center gap-2">
-          <input
-            className="input !w-44"
-            placeholder={t("dyn.teamName")}
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-          />
-          <button className="btn-ghost" disabled={!teamName.trim()}>
-            {t("dyn.create")}
-          </button>
-        </form>
       </div>
 
       {/* Table-Group-style team map */}
@@ -426,100 +399,53 @@ export default function DynamicsPage() {
         </div>
       ) : null}
 
-      {/* Positioning scatter + coverage */}
+      {/* Team positioning — full width */}
       {members.length ? (
-        <div className="print-page mt-4 grid gap-4 lg:grid-cols-5">
-          <div className="card lg:col-span-3">
-            <h3 className="font-heading text-lg text-deep">{t("dyn.scatter")}</h3>
-            <div className="mt-4">
-              <TeamMap
-                dots={dots}
-                axisX={t("dyn.axisX")}
-                axisY={t("dyn.axisY")}
-                quadrants={["🎧 🎯", "⚡ 🏁", "📡 🌬️", "🔧 📊"]}
-              />
-            </div>
-          </div>
-          <div className="card lg:col-span-2">
-            <h3 className="font-heading text-lg text-deep">{t("dyn.coverage")}</h3>
-            <div className="mt-4 space-y-3">
-              {coverage.map(({ prof, n }) => (
-                <div key={prof.id} className="flex items-center gap-3">
-                  <div className="w-40 shrink-0 truncate text-xs font-medium text-ink">
-                    {prof.emoji} {l(prof.shortName)}
-                  </div>
-                  <div className="flex flex-1 items-center gap-1">
-                    {Array.from({ length: Math.max(members.length, 1) }, (_, i) => (
-                      <span
-                        key={i}
-                        className={`h-3 flex-1 rounded-full ${i < n ? "bg-deep" : "bg-cloud"}`}
-                        style={{ maxWidth: 24 }}
-                      />
-                    ))}
-                  </div>
-                  <span
-                    className={`w-20 shrink-0 text-right text-xs font-semibold ${
-                      n === 0 ? "text-coral" : "text-deep"
-                    }`}
-                  >
-                    {n === 0 ? t("dyn.gap") : n}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-xs text-ink/40">{t("dyn.coverageHint")}</p>
+        <div className="print-page card mt-4">
+          <h3 className="font-heading text-lg text-deep">{t("dyn.scatter")}</h3>
+          <div className="mx-auto mt-4 max-w-3xl">
+            <TeamMap
+              dots={dots}
+              axisX={t("dyn.axisX")}
+              axisY={t("dyn.axisY")}
+              quadrants={["🎧 🎯", "⚡ 🏁", "📡 🌬️", "🔧 📊"]}
+            />
           </div>
         </div>
       ) : null}
 
-      {/* Members & team assignment */}
-      <div className="no-print card mt-6 overflow-x-auto !p-0">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-cloud text-left text-xs uppercase tracking-wide text-deep/60">
-              <th className="px-5 py-3">{t("common.employees")}</th>
-              <th className="px-5 py-3">{t("common.role")}</th>
-              <th className="px-5 py-3">{t("report.profile")}</th>
-              <th className="px-5 py-3">{t("common.team")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {employees.map((p) => {
-              const role = p.roleId ? ROLE_MAP[p.roleId] : undefined;
-              const primary = PROFILE_MAP[p.results!.primaryProfile];
-              const secondary = PROFILE_MAP[p.results!.secondaryProfile];
-              return (
-                <tr key={p.id} className="border-b border-cloud/60">
-                  <td className="px-5 py-3 font-medium text-ink">{p.name}</td>
-                  <td className="px-5 py-3 text-ink/70">{role ? l(role.title) : "—"}</td>
-                  <td className="px-5 py-3">
-                    <div>
-                      {primary.emoji} {l(primary.name)}
-                    </div>
-                    <div className="text-xs text-ink/45">
-                      {secondary.emoji} {l(secondary.name)}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <select
-                      className="input !w-48 !py-1.5"
-                      value={p.teamId ?? ""}
-                      onChange={(e) => assign(p.id, e.target.value)}
-                    >
-                      <option value="">—</option>
-                      {(db?.teams ?? []).map((team) => (
-                        <option key={team.id} value={team.id}>
-                          {team.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Profile coverage — full width */}
+      {members.length ? (
+        <div className="print-page card mt-4">
+          <h3 className="font-heading text-lg text-deep">{t("dyn.coverage")}</h3>
+          <div className="mt-4 grid gap-x-10 gap-y-3 md:grid-cols-2">
+            {coverage.map(({ prof, n }) => (
+              <div key={prof.id} className="flex items-center gap-3">
+                <div className="w-44 shrink-0 truncate text-sm font-medium text-ink">
+                  {prof.emoji} {l(prof.shortName)}
+                </div>
+                <div className="flex flex-1 items-center gap-1">
+                  {Array.from({ length: Math.max(members.length, 1) }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`h-3 flex-1 rounded-full ${i < n ? "bg-deep" : "bg-cloud"}`}
+                      style={{ maxWidth: 26 }}
+                    />
+                  ))}
+                </div>
+                <span
+                  className={`w-20 shrink-0 text-right text-xs font-semibold ${
+                    n === 0 ? "text-coral" : "text-deep"
+                  }`}
+                >
+                  {n === 0 ? t("dyn.gap") : n}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-ink/40">{t("dyn.coverageHint")}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
