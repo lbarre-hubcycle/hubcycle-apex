@@ -29,6 +29,7 @@ model Person {
   results          Json?
   feedback         Json?
   goals            Json?
+  oneOnOnes        Json?
 }
 
 // Mirrors the Team interface in src/lib/types.ts.

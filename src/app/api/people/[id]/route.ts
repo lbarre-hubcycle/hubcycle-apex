@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { canViewPerson, getViewer } from "@/lib/auth";
 import { sanitizeFeedback } from "@/lib/feedback";
+import { sanitizeOneOnOnes } from "@/lib/one-on-ones";
 import { loadDb, saveDb } from "@/lib/storage";
 
 type Params = { params: Promise<{ id: string }> };
@@ -16,10 +17,10 @@ export async function GET(_req: Request, { params }: Params) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   return NextResponse.json({
-    person: sanitizeFeedback(person, viewer),
+    person: sanitizeOneOnOnes(sanitizeFeedback(person, viewer), viewer),
     teams: db.teams,
-    // Teammates are needed for team-map context only — never expose their feedback or goals here.
-    people: db.people.map((p) => ({ ...p, feedback: undefined, goals: undefined })),
+    // Teammates are needed for team-map context only — never expose their private data here.
+    people: db.people.map((p) => ({ ...p, feedback: undefined, goals: undefined, oneOnOnes: undefined })),
   });
 }
 

@@ -8,6 +8,7 @@ import type {
   FeedbackItem,
   Goal,
   Lang,
+  OneOnOne,
   Person,
   PersonKind,
   Results,
@@ -72,6 +73,7 @@ function personFromRow(row: PersonRow): Person {
     results: row.results === null ? undefined : (row.results as unknown as Results),
     feedback: row.feedback === null ? undefined : (row.feedback as unknown as FeedbackItem[]),
     goals: row.goals === null ? undefined : (row.goals as unknown as Goal[]),
+    oneOnOnes: row.oneOnOnes === null ? undefined : (row.oneOnOnes as unknown as OneOnOne[]),
   };
 }
 
@@ -97,6 +99,8 @@ export function personToRow(p: Person) {
     feedback:
       p.feedback === undefined ? Prisma.DbNull : (p.feedback as unknown as Prisma.InputJsonValue),
     goals: p.goals === undefined ? Prisma.DbNull : (p.goals as unknown as Prisma.InputJsonValue),
+    oneOnOnes:
+      p.oneOnOnes === undefined ? Prisma.DbNull : (p.oneOnOnes as unknown as Prisma.InputJsonValue),
   };
 }
 

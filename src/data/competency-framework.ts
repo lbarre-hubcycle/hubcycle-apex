@@ -515,7 +515,7 @@ export interface RoleExpectations {
   roleId: string; // matches src/data/roles.ts ids
   level: Level;
   keyKpi: L10n;
-  secondaryKpis: [L10n, L10n];
+  secondaryKpis: L10n[]; // usually 2, per the referential — some roles have fewer
   /** Codes of applicable functional (B) and leadership (C) competencies. A1-A6 apply to everyone. */
   competencies: string[];
 }
@@ -524,7 +524,7 @@ export const ROLE_EXPECTATIONS: RoleExpectations[] = [
   {
     roleId: "sales-manager",
     level: "mid",
-    keyKpi: { en: "Booking (signed revenue at margin ≥ 34%)", fr: "Booking (CA signé à marge ≥ 34 %)" },
+    keyKpi: { en: "Booking (signed GMV at margin ≥ 34%)", fr: "Booking (GMV signé à marge ≥ 34 %)" },
     secondaryKpis: [
       { en: "Close rate ≥ 25%", fr: "Taux de closing ≥ 25 %" },
       { en: "Renewal rate ≥ 80%", fr: "Taux de renouvellement ≥ 80 %" },
@@ -544,7 +544,7 @@ export const ROLE_EXPECTATIONS: RoleExpectations[] = [
   {
     roleId: "sourcing-manager",
     level: "mid",
-    keyKpi: { en: "SG5 / supply chains activated (≥ €600k)", fr: "SG5 / filières activées (≥ 600 k€)" },
+    keyKpi: { en: "SG5 / supply chains activated", fr: "SG5 / filières activées" },
     secondaryKpis: [
       { en: "First-pass spec validation ≥ 80%", fr: "Validation specs 1er passage ≥ 80 %" },
       { en: "Supplier retention ≥ 90%", fr: "Rétention fournisseurs ≥ 90 %" },
@@ -694,23 +694,15 @@ export const ROLE_EXPECTATIONS: RoleExpectations[] = [
     ],
     competencies: ["B8", "B7", "C3"],
   },
-  {
-    roleId: "cfoo",
-    level: "senior",
-    keyKpi: { en: "Cash forecast reliability / runway", fr: "Fiabilité du forecast cash / runway" },
-    secondaryKpis: [
-      { en: "On-time close", fr: "Clôture à l’heure" },
-      { en: "Audit readiness", fr: "Audit readiness" },
-    ],
-    competencies: ["B6", "B5", "C1", "C2", "C3"],
-  },
+  // cfoo: the Notion referential row (CFO0) is currently blank — its KPI moved
+  // to financial-manager. Re-add expectations here once Notion defines them.
   {
     roleId: "financial-manager",
     level: "mid",
-    keyKpi: { en: "Monthly close lead time", fr: "Délai de clôture mensuelle" },
+    keyKpi: { en: "Cash forecast reliability / runway", fr: "Fiabilité du forecast cash / runway" },
     secondaryKpis: [
       { en: "DSO / collections", fr: "DSO / encaissements" },
-      { en: "Accounting error rate", fr: "Taux d’erreur comptable" },
+      { en: "Monthly close lead time", fr: "Délais de clôture mensuelles" },
     ],
     competencies: ["B6", "B5"],
   },
@@ -773,18 +765,15 @@ export const ROLE_EXPECTATIONS: RoleExpectations[] = [
     keyKpi: { en: "% recruitment plan filled", fr: "% recruitment plan filled" },
     secondaryKpis: [
       { en: "Time-to-hire", fr: "Time-to-hire" },
-      { en: "90-day retention", fr: "Rétention à 90 jours" },
+      { en: "130-day retention", fr: "Rétention à 130 jours" },
     ],
     competencies: ["B1", "B3", "B2"],
   },
   {
     roleId: "people-workplace-partner",
     level: "junior",
-    keyKpi: { en: "Week-1 onboarding compliance (100%)", fr: "Conformité onboarding semaine 1 (100 %)" },
-    secondaryKpis: [
-      { en: "HRIS accuracy ≥ 98%", fr: "Exactitude SIRH ≥ 98 %" },
-      { en: "Workplace satisfaction ≥ 8/10", fr: "Satisfaction workplace ≥ 8/10" },
-    ],
+    keyKpi: { en: "Workplace satisfaction ≥ 8/10", fr: "Satisfaction workplace ≥ 8/10" },
+    secondaryKpis: [{ en: "HRIS accuracy ≥ 98%", fr: "Exactitude SIRH ≥ 98 %" }],
     competencies: ["B5", "B7"],
   },
   {

@@ -206,6 +206,29 @@ export interface Goal {
   createdByName: string;
 }
 
+/** 1-2-1 meetings (manager ↔ employee). Visible to the two participants only. */
+export interface TodoItem {
+  id: string;
+  text: string;
+  done: boolean;
+  /** Person id of who owns the action (one of the two participants). */
+  assigneeId?: string;
+  createdAt: string;
+}
+
+export interface OneOnOne {
+  id: string;
+  /** Meeting date (ISO date). */
+  date: string;
+  /** The other participant (a manager of the employee). */
+  withId: string;
+  withName: string;
+  /** Notes shared between the two participants. */
+  sharedNotes?: string;
+  todos: TodoItem[];
+  createdAt: string;
+}
+
 export type PersonKind = "candidate" | "employee";
 
 /** Platform access role, assigned in the Admin panel (SSO users). */
@@ -237,6 +260,8 @@ export interface Person {
   feedback?: FeedbackItem[];
   /** Goals & commitments (employees only). Visible to self, managers and HR. */
   goals?: Goal[];
+  /** 1-2-1 meetings (employees only). Filtered server-side to participants. */
+  oneOnOnes?: OneOnOne[];
 }
 
 export interface Team {

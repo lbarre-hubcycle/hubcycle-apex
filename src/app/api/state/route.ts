@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getViewer, visiblePeople } from "@/lib/auth";
 import { feedbackWall, sanitizeFeedback } from "@/lib/feedback";
+import { sanitizeOneOnOnes } from "@/lib/one-on-ones";
 import { loadDb, storageMode } from "@/lib/storage";
 
 /**
@@ -14,7 +15,9 @@ export async function GET() {
   const viewer = await getViewer();
   if (!viewer) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const db = await loadDb();
-  const people = visiblePeople(db, viewer).map((p) => sanitizeFeedback(p, viewer));
+  const people = visiblePeople(db, viewer).map((p) =>
+    sanitizeOneOnOnes(sanitizeFeedback(p, viewer), viewer)
+  );
   const teamIds = new Set(
     viewer.role === "hr"
       ? db.teams.map((t) => t.id)
