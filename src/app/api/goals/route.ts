@@ -52,6 +52,7 @@ export async function POST(req: Request) {
     kind?: GoalKind;
     competency?: string;
     targetDate?: string;
+    okrId?: string;
   };
   const title = body.title?.trim();
   if (!body.personId || !title || title.length > 200 || !body.kind || !KINDS.includes(body.kind)) {
@@ -68,11 +69,19 @@ export async function POST(req: Request) {
   if (!person) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (!canManage(viewer, person)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
+  // Optional alignment to a company OKR key result.
+  const okrId =
+    body.okrId &&
+    db.okrs?.some((o) => o.id === body.okrId || o.keyResults.some((k) => k.id === body.okrId))
+      ? body.okrId
+      : undefined;
+
   const goal: Goal = {
     id: newId(),
     title,
     description: body.description?.trim().slice(0, 2000) || undefined,
     commitments,
+    okrId,
     kind: body.kind,
     competency:
       body.kind === "development" && body.competency && FRAMEWORK_MAP[body.competency]

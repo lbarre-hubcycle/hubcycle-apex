@@ -116,7 +116,12 @@ async function loadFromPostgres(): Promise<Db> {
     prisma.person.findMany({ orderBy: { invitedAt: "asc" } }),
     prisma.team.findMany({ orderBy: { name: "asc" } }),
   ]);
-  return { people: people.map(personFromRow), teams: teams.map(teamFromRow) };
+  // AppDoc may not exist until /api/admin/migrate has run — tolerate that.
+  const okrs = await prisma.appDoc
+    .findUnique({ where: { id: "okrs" } })
+    .then((row) => (row ? (row.data as unknown as Db["okrs"]) : undefined))
+    .catch(() => undefined);
+  return { people: people.map(personFromRow), teams: teams.map(teamFromRow), okrs };
 }
 
 async function saveToPostgres(db: Db): Promise<void> {
@@ -136,6 +141,15 @@ async function saveToPostgres(db: Db): Promise<void> {
     ),
     prisma.team.deleteMany({ where: { id: { notIn: teamIds } } }),
   ]);
+  // Outside the transaction: AppDoc may not exist yet (pre-migrate deploys).
+  if (db.okrs !== undefined) {
+    const data = db.okrs as unknown as Prisma.InputJsonValue;
+    await prisma.appDoc
+      .upsert({ where: { id: "okrs" }, create: { id: "okrs", data }, update: { data } })
+      .catch((err) => {
+        console.error("AppDoc save failed (run /api/admin/migrate):", err?.message ?? err);
+      });
+  }
 }
 
 // --- Public API -----------------------------------------------------------

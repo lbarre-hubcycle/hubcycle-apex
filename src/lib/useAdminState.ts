@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { Db, FeedbackItem, UserRole } from "./types";
+import type { Db, FeedbackItem, Okr, UserRole } from "./types";
 
 export interface ClientViewer {
   role: UserRole;
@@ -25,6 +25,7 @@ export function useAdminState() {
   const [viewer, setViewer] = useState<ClientViewer | null>(null);
   const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
   const [wall, setWall] = useState<WallItem[]>([]);
+  const [okrs, setOkrs] = useState<Okr[]>([]);
 
   const refresh = useCallback(async () => {
     const res = await fetch("/api/state", { cache: "no-store" });
@@ -35,12 +36,14 @@ export function useAdminState() {
         viewer: ClientViewer;
         directory?: DirectoryEntry[];
         wall?: WallItem[];
+        okrs?: Okr[];
       };
       setDb(data.db);
       setMode(data.storageMode);
       setViewer(data.viewer);
       setDirectory(data.directory ?? []);
       setWall(data.wall ?? []);
+      setOkrs(data.okrs ?? []);
     }
   }, []);
 
@@ -48,5 +51,5 @@ export function useAdminState() {
     void refresh();
   }, [refresh]);
 
-  return { db, mode, viewer, directory, wall, refresh };
+  return { db, mode, viewer, directory, wall, okrs, refresh };
 }

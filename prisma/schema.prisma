@@ -37,3 +37,10 @@ model Team {
   id   String @id
   name String
 }
+
+// Whole-document storage for collections that are not people/teams
+// (e.g. id "okrs" holds the OKR list as a JSON array).
+model AppDoc {
+  id   String @id
+  data Json
+}

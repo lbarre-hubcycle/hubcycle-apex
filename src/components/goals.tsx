@@ -18,10 +18,13 @@ export const STATUS_META: Record<
 /** One objective. `onCheckin`/`onDelete` enable the interactive controls. */
 export function GoalCard({
   goal,
+  okrLabel,
   onCheckin,
   onDelete,
 }: {
   goal: Goal;
+  /** Title of the OKR key result this objective is aligned to, when any. */
+  okrLabel?: string;
   onCheckin?: (status: GoalStatus, progress: number, note: string) => Promise<void>;
   onDelete?: () => Promise<void>;
 }) {
@@ -77,6 +80,14 @@ export function GoalCard({
         {goal.kpi ? (
           <span className="rounded-full bg-cloud px-2 py-0.5 text-[11px] font-medium text-ink/60">
             KPI : {goal.kpi}
+          </span>
+        ) : null}
+        {okrLabel ? (
+          <span
+            className="max-w-56 truncate rounded-full bg-deep/10 px-2 py-0.5 text-[11px] font-semibold text-deep"
+            title={okrLabel}
+          >
+            🧭 OKR : {okrLabel}
           </span>
         ) : null}
         <span className={`ml-auto rounded-full px-2.5 py-1 text-[11px] font-semibold ${meta.chip}`}>

@@ -290,7 +290,47 @@ export interface Team {
   name: string;
 }
 
+/** OKRs — company objectives per period, each key result owned by a department. */
+export interface KrCheckIn {
+  date: string;
+  value: number;
+  note?: string;
+  byName: string;
+}
+
+export interface KeyResult {
+  id: string;
+  /** Measurable outcome ("Billing YTD ≥ 10,5 M€"), never a task list. */
+  title: string;
+  /** Department carrying it (free text: Supply, Finance, Sales…). */
+  team?: string;
+  /** Accountable person (free text name). */
+  owner?: string;
+  /** Budget line this KR moves (see src/data/budget.ts). */
+  budgetTag?: string;
+  /** The SWOT finding that justified this KR. */
+  swot?: string;
+  start: number;
+  target: number;
+  current: number;
+  unit?: string; // "M€", "%", "#", "j"…
+  checkIns: KrCheckIn[];
+}
+
+export interface Okr {
+  id: string;
+  /** "2026-Q3", "2026-Q4", "2026" (annual). */
+  period: string;
+  /** Qualitative, memorable objective. */
+  objective: string;
+  /** Why now — SWOT context. */
+  description?: string;
+  keyResults: KeyResult[];
+  createdAt: string;
+}
+
 export interface Db {
   people: Person[];
   teams: Team[];
+  okrs?: Okr[];
 }

@@ -20,7 +20,7 @@ import type { CommitmentCadence, GoalKind, GoalStatus, Person } from "@/lib/type
 export default function GoalsPage() {
   const { l, lang } = useI18n();
   const fr = lang === "fr";
-  const { db, viewer, refresh } = useAdminState();
+  const { db, viewer, okrs, refresh } = useAdminState();
 
   const manageable = useMemo(() => {
     if (!db || !viewer) return [];
@@ -49,7 +49,24 @@ export default function GoalsPage() {
   const [commitments, setCommitments] = useState<CommitmentDraft[]>([{ ...EMPTY_COMMITMENT }]);
   const [competency, setCompetency] = useState("");
   const [targetDate, setTargetDate] = useState("");
+  const [okrId, setOkrId] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Current quarter's key results, own team's first — candidates for alignment.
+  const okrKrs = useMemo(() => {
+    const periods = [...new Set(okrs.map((o) => o.period))].sort();
+    const current = periods[periods.length - 1];
+    if (!current) return [];
+    return okrs
+      .filter((o) => o.period === current)
+      .flatMap((o) => o.keyResults.map((k) => ({ ...k, objective: o.objective })));
+  }, [okrs]);
+  const krLabel = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of okrs) for (const k of o.keyResults) map.set(k.id, k.title);
+    for (const o of okrs) map.set(o.id, o.objective);
+    return map;
+  }, [okrs]);
 
   function setCommitmentAt(i: number, patch: Partial<CommitmentDraft>) {
     setCommitments((prev) => prev.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
@@ -77,11 +94,16 @@ export default function GoalsPage() {
       }));
   }, [person, exp, l]);
 
-  function prefill(nextKind: GoalKind, nextTitle: string, opts?: { competency?: string; commitment?: string }) {
+  function prefill(
+    nextKind: GoalKind,
+    nextTitle: string,
+    opts?: { competency?: string; commitment?: string; okrId?: string }
+  ) {
     setShowForm(true);
     setKind(nextKind);
     setTitle(nextTitle);
     setCompetency(opts?.competency ?? "");
+    setOkrId(opts?.okrId ?? "");
     setCommitments([{ ...EMPTY_COMMITMENT, text: opts?.commitment ?? "" }]);
   }
 
@@ -106,6 +128,7 @@ export default function GoalsPage() {
         })),
         competency: kind === "development" ? competency || undefined : undefined,
         targetDate: targetDate || undefined,
+        okrId: okrId || undefined,
       }),
     });
     setSaving(false);
@@ -114,6 +137,7 @@ export default function GoalsPage() {
       setCommitments([{ ...EMPTY_COMMITMENT }]);
       setCompetency("");
       setTargetDate("");
+      setOkrId("");
       setShowForm(false);
       await refresh();
     }
@@ -242,6 +266,17 @@ export default function GoalsPage() {
                     </label>
                   </div>
 
+                  {okrId && krLabel.get(okrId) ? (
+                    <div className="mt-2 flex items-center gap-2 text-[11px]">
+                      <span className="rounded-full bg-deep/10 px-2.5 py-1 font-semibold text-deep">
+                        🧭 {fr ? "Aligné sur l'OKR :" : "Aligned to OKR:"} {krLabel.get(okrId)}
+                      </span>
+                      <button onClick={() => setOkrId("")} className="text-ink/40 hover:text-coral">
+                        ×
+                      </button>
+                    </div>
+                  ) : null}
+
                   <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-deep/60">
                     {fr ? "Mes engagements — comment j'y arrive" : "My commitments — how I get there"}{" "}
                     <span className="text-coral">*</span>
@@ -362,6 +397,7 @@ export default function GoalsPage() {
                     <GoalCard
                       key={goal.id}
                       goal={goal}
+                      okrLabel={goal.okrId ? krLabel.get(goal.okrId) : undefined}
                       onCheckin={(s, p, n) => checkin(goal.id, s, p, n)}
                       onDelete={() => remove(goal.id)}
                     />
@@ -378,7 +414,12 @@ export default function GoalsPage() {
                 </h3>
                 <div className="space-y-3">
                   {closed.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} onDelete={() => remove(goal.id)} />
+                    <GoalCard
+                      key={goal.id}
+                      goal={goal}
+                      okrLabel={goal.okrId ? krLabel.get(goal.okrId) : undefined}
+                      onDelete={() => remove(goal.id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -387,6 +428,37 @@ export default function GoalsPage() {
 
           {/* Suggestions */}
           <div className="space-y-4 self-start">
+            {okrKrs.length ? (
+              <div className="card">
+                <h3 className="font-heading text-base text-deep">
+                  {fr ? "Contribuer aux OKRs" : "Contribute to the OKRs"}
+                </h3>
+                <p className="mt-1 text-[11px] text-ink/50">
+                  {fr
+                    ? "Alignez un objectif personnel sur un résultat clé du trimestre."
+                    : "Align a personal objective to one of the quarter's key results."}
+                </p>
+                <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {okrKrs.map((k) => (
+                    <button
+                      key={k.id}
+                      onClick={() =>
+                        prefill("performance", fr ? `Contribuer : ${k.title}` : `Contribute: ${k.title}`, {
+                          okrId: k.id,
+                        })
+                      }
+                      className="block w-full rounded-xl border border-deep/10 px-3 py-2 text-left text-xs hover:bg-cloud"
+                    >
+                      <span className="font-semibold text-deep">
+                        ＋ {k.team ? `${k.team} · ` : ""}
+                        {k.title}
+                      </span>
+                      <span className="mt-0.5 block text-ink/45">{k.objective}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {exp ? (
               <div className="card">
                 <h3 className="font-heading text-base text-deep">

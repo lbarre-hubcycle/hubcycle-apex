@@ -33,6 +33,7 @@ export async function GET() {
           .map((p) => ({ id: p.id, name: p.name, roleId: p.roleId }))
       : [],
     wall: internal ? feedbackWall(db) : [],
+    okrs: internal ? (db.okrs ?? []) : [],
     viewer: {
       role: viewer.role,
       email: viewer.email,
