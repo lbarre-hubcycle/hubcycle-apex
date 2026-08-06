@@ -44,8 +44,11 @@ export type KrStatus =
 
 /**
  * Status: an explicit closing outcome wins; otherwise progress compared to
- * how far into the period we are (a finished period with <100% = missed).
+ * how far into the period we are. OKR methodology at closing: an ambitious
+ * key result at ≥ 70% counts as achieved; below, it is missed.
  */
+const ACHIEVED_THRESHOLD = 70;
+
 function krStatus(kr: KeyResult, period: string): KrStatus {
   if (kr.outcome === "achieved") return "done";
   if (kr.outcome === "missed") return "missed";
@@ -53,7 +56,7 @@ function krStatus(kr: KeyResult, period: string): KrStatus {
   const p = krProgress(kr);
   if (p >= 100) return "done";
   const expected = elapsedFraction(period) * 100;
-  if (expected >= 100) return "missed";
+  if (expected >= 100) return p >= ACHIEVED_THRESHOLD ? "done" : "missed";
   if (expected === 0) return "not-started";
   const ratio = p / expected;
   if (ratio >= 0.85) return "on-track";
@@ -186,15 +189,18 @@ export default function OkrsPage() {
             <span className="font-semibold">La méthode :</span> max 4 objectifs par trimestre, 3 à 5
             résultats clés chacun — des <span className="font-semibold">résultats mesurables</span>,
             pas des listes de tâches. Chaque KR a un département responsable, se rattache au budget
-            quand il bouge une ligne, et cite le constat SWOT qui le justifie. Q3–Q4 2026 : priorité
-            au <span className="font-semibold">billing</span>.
+            quand il bouge une ligne, et cite le constat SWOT qui le justifie. À la clôture, un KR
+            à <span className="font-semibold">≥ 70 % est atteint</span> (les OKR sont ambitieux).
+            Q3–Q4 2026 : priorité au <span className="font-semibold">billing</span>.
           </>
         ) : (
           <>
             <span className="font-semibold">The method:</span> max 4 objectives per quarter, 3–5 key
             results each — <span className="font-semibold">measurable outcomes</span>, not task
             lists. Every KR has an owning department, tags the budget line it moves, and cites the
-            SWOT finding behind it. Q3–Q4 2026: <span className="font-semibold">billing</span> first.
+            SWOT finding behind it. At closing, a KR at{" "}
+            <span className="font-semibold">≥ 70% counts as achieved</span> (OKRs are ambitious).
+            Q3–Q4 2026: <span className="font-semibold">billing</span> first.
           </>
         )}
       </div>
