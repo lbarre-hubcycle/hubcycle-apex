@@ -45,7 +45,7 @@ const ALL: Role[] = ["hr", "manager", "recruiter", "employee"];
 const GROUPS: {
   id: string;
   key: "nav.cockpit" | "nav.crew" | "nav.company" | "nav.recruit" | "nav.settings";
-  items: { href: string; key: "nav.me" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.settings"; roles: Role[] }[];
+  items: { href: string; key: "nav.me" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.compare" | "nav.settings"; roles: Role[] }[];
 }[] = [
   {
     id: "cockpit",
@@ -73,7 +73,10 @@ const GROUPS: {
   {
     id: "recruit",
     key: "nav.recruit",
-    items: [{ href: "/admin/recruit", key: "nav.recruit", roles: ["hr", "recruiter"] }],
+    items: [
+      { href: "/admin/recruit", key: "nav.recruit", roles: ["hr", "recruiter"] },
+      { href: "/admin/recruit/compare", key: "nav.compare", roles: ["hr", "recruiter"] },
+    ],
   },
   {
     id: "admin",

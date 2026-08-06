@@ -19,6 +19,7 @@ const DICT = {
   "nav.cockpit": { en: "Cockpit", fr: "Cockpit" },
   "nav.crew": { en: "My Crew", fr: "My Crew" },
   "nav.company": { en: "Hubcycle", fr: "Hubcycle" },
+  "nav.compare": { en: "Compare", fr: "Comparateur" },
   "nav.referential": { en: "Referential", fr: "R\u00e9f\u00e9rentiel" },
   "ref.title": { en: "Competency & KPI referential", fr: "R\u00e9f\u00e9rentiel comp\u00e9tences et KPI" },
   "ref.sub": {

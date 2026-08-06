@@ -10,7 +10,8 @@ import { useI18n } from "@/lib/i18n";
 import { PrintButton } from "@/components/ui";
 import { Scale5, TeamMap, type MapDot } from "@/components/charts";
 import { Bar100 } from "@/components/charts";
-import { commercialFit, commercialStyleOf, roleCommercialNeed } from "@/lib/commercial-style";
+import { commercialStyleOf, roleCommercialNeed } from "@/lib/commercial-style";
+import { COMPETENCY_READS, competencyStyleScore, readTier } from "@/lib/competency-read";
 import { FRAMEWORK_MAP, ROLE_EXPECTATIONS_MAP } from "@/data/competency-framework";
 import { Disclaimer, ProfileHero, StrengthsWatchouts, WorkstyleBlock } from "@/components/report";
 import type { Person, ProfileId, Team } from "@/lib/types";
@@ -23,11 +24,13 @@ interface Payload {
 
 
 /**
- * Hunting vs farming debrief: what the role's competency expectations
- * require (B1 / B2) versus the candidate's declared commercial style.
+ * Expected-competencies debrief, generalized to every role: for each
+ * competency the role's referential expects, does the candidate's declared
+ * style demonstrate it — or lean toward the opposite register? Knowledge
+ * competencies (e.g. B7) are flagged for interview, never fake-scored.
  * Full report only — never in the candidate digest.
  */
-function CommercialStyleBlock({
+function ExpectedCompetenciesBlock({
   firstName,
   roleId,
   results,
@@ -36,114 +39,134 @@ function CommercialStyleBlock({
   roleId: string;
   results: NonNullable<Person["results"]>;
 }) {
-  const { t, l, lang } = useI18n();
+  const { l, lang } = useI18n();
   const fr = lang === "fr";
-  const need = roleCommercialNeed(roleId)!;
-  const read = commercialStyleOf(results);
-  const fit = commercialFit(need, read);
-  const pos = Math.min(95, Math.max(5, 50 + read.delta / 2));
+  const exp = ROLE_EXPECTATIONS_MAP[roleId];
+  if (!exp) return null;
 
-  const needTxt =
-    need === "both"
-      ? fr
-        ? "les deux registres — ouvrir de nouveaux comptes (chasse, B1) et faire grandir l’existant (culture, B2)"
-        : "both registers — opening new accounts (hunting, B1) and growing existing ones (farming, B2)"
-      : need === "hunting"
-        ? fr
-          ? "un fort drive de conquête : prospection, qualification, closing (chasse, B1)"
-          : "a strong new-business drive: prospecting, qualification, closing (hunting, B1)"
-        : fr
-          ? "un développement de comptes solide : satisfaction, rétention, upsell (culture, B2)"
-          : "solid account development: satisfaction, retention, upsell (farming, B2)";
+  const need = roleCommercialNeed(roleId);
+  const gauge = need ? commercialStyleOf(results) : null;
+  const gaugePos = gauge ? Math.min(95, Math.max(5, 50 + gauge.delta / 2)) : 50;
 
-  const styleTxt =
-    read.style === "hunter"
-      ? fr
-        ? "un profil de chasseur marqué"
-        : "a marked hunter profile"
-      : read.style === "farmer"
-        ? fr
-          ? "un profil de cultivateur marqué"
-          : "a marked farmer profile"
-        : fr
-          ? "un profil équilibré entre chasse et culture"
-          : "a balanced hunter-farmer profile";
+  const tierChip = (tier: "demonstrated" | "present" | "opposite" | "interview") => {
+    const styles = {
+      demonstrated: "bg-sky/40 text-deep",
+      present: "bg-cloud text-ink/60",
+      opposite: "bg-coral/15 text-coral",
+      interview: "bg-lavender/40 text-deep",
+    } as const;
+    const labels = {
+      demonstrated: fr ? "Style aligné" : "Style aligned",
+      present: fr ? "Présent, à confirmer" : "Present, to confirm",
+      opposite: fr ? "Registre opposé" : "Opposite register",
+      interview: fr ? "À évaluer en entretien" : "Assess in interview",
+    } as const;
+    return (
+      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${styles[tier]}`}>
+        {labels[tier]}
+      </span>
+    );
+  };
 
-  const verdict =
-    fit === "match"
-      ? fr
-        ? "Alignement net entre le style déclaré et l’exigence commerciale du poste."
-        : "Clear alignment between the declared style and the role's commercial requirement."
-      : fit === "partial"
-        ? fr
-          ? "Alignement partiel : le registre le moins naturel demandera un étayage conscient (coaching, binôme, rituels de prospection ou de suivi de comptes)."
-          : "Partial alignment: the less natural register will need conscious scaffolding (coaching, pairing, prospecting or account-review rituals)."
-        : fr
-          ? "Écart notable entre ce que le poste exige et le style déclaré — à explorer explicitement en entretien avant de conclure."
-          : "Notable gap between what the role requires and the declared style — explore it explicitly in interview before concluding.";
+  const rows = exp.competencies.map((code) => {
+    const def = FRAMEWORK_MAP[code];
+    const read = COMPETENCY_READS[code];
+    const score = competencyStyleScore(results, code);
+    const tier = score === null ? ("interview" as const) : readTier(score);
+    return { code, def, read, score, tier };
+  });
 
-  const questions =
-    need === "farming"
-      ? [
-          fr
-            ? "Racontez-moi comment vous avez fait grandir votre compte le plus stratégique : qu’avez-vous fait, sur quelle durée, avec quel résultat ?"
-            : "Tell me how you grew your most strategic account: what did you do, over what period, with what result?",
-        ]
-      : need === "hunting"
-        ? [
-            fr
-              ? "Racontez-moi le dernier compte que vous avez ouvert à partir de rien : votre démarche concrète, semaine par semaine, jusqu’à la signature."
-              : "Tell me about the last account you opened from scratch: your concrete approach, week by week, up to signature.",
-          ]
-        : [
-            fr
-              ? "Sur votre dernier portefeuille : quelle part de votre temps entre ouvrir de nouveaux comptes et développer l’existant — et qu’est-ce qui vous a le plus réussi ?"
-              : "On your last portfolio: how did you split your time between opening new accounts and growing existing ones — and which worked best for you?",
-          ];
+  const coreRows = ["A1", "A2", "A3", "A4", "A5", "A6"].map((code) => {
+    const score = competencyStyleScore(results, code)!;
+    return { code, def: FRAMEWORK_MAP[code], score, tier: readTier(score) };
+  });
 
   return (
     <div className="print-page card">
       <h3 className="font-heading text-lg text-deep">
-        {fr ? "Style commercial — chasse vs culture" : "Commercial style — hunting vs farming"}
+        {fr
+          ? "Compétences attendues du poste — le style les démontre-t-il ?"
+          : "The role's expected competencies — does the style demonstrate them?"}
       </h3>
       <p className="mt-1 text-xs text-ink/50">
         {fr
-          ? "Lecture issue des préférences déclarées, croisée avec les compétences attendues du poste (référentiel)."
-          : "Read from declared preferences, crossed with the role's expected competencies (referential)."}
+          ? `Lecture des préférences déclarées de ${firstName} au regard du référentiel du poste. Un style opposé n'est pas un verdict : c'est un point à explorer en entretien.`
+          : `${firstName}'s declared preferences read against the role's referential. An opposite register is not a verdict: it is a point to explore in interview.`}
       </p>
 
-      <div className="mt-5">
-        <div className="mb-1.5 flex justify-between text-xs font-semibold text-deep">
-          <span>{fr ? "🌱 Culture (comptes)" : "🌱 Farming (accounts)"}</span>
-          <span>{fr ? "🎯 Chasse (conquête)" : "🎯 Hunting (new business)"}</span>
+      {gauge && need ? (
+        <div className="mt-5 rounded-2xl bg-cloud/40 p-4">
+          <div className="mb-1.5 flex justify-between text-xs font-semibold text-deep">
+            <span>{fr ? "🌱 Culture (comptes)" : "🌱 Farming (accounts)"}</span>
+            <span>{fr ? "🎯 Chasse (conquête)" : "🎯 Hunting (new business)"}</span>
+          </div>
+          <div className="relative h-3 rounded-full bg-gradient-to-r from-sky/60 via-cloud to-coral/50">
+            <span
+              className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-deep shadow"
+              style={{ left: `${gaugePos}%` }}
+            />
+          </div>
+          <p className="mt-2 text-[11px] text-ink/50">
+            {fr
+              ? `Le poste attend ${need === "both" ? "les deux registres commerciaux (B1 + B2)" : need === "hunting" ? "surtout la conquête (B1)" : "surtout le développement de comptes (B2)"} · conquête ${gauge.hunter}/100 · développement ${gauge.farmer}/100.`
+              : `The role expects ${need === "both" ? "both commercial registers (B1 + B2)" : need === "hunting" ? "mostly hunting (B1)" : "mostly account development (B2)"} · hunting ${gauge.hunter}/100 · farming ${gauge.farmer}/100.`}
+          </p>
         </div>
-        <div className="relative h-3 rounded-full bg-gradient-to-r from-sky/60 via-cloud to-coral/50">
-          <span
-            className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-deep shadow"
-            style={{ left: `${pos}%` }}
-          />
-        </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <Bar100 label={fr ? "Score conquête" : "Hunting score"} value={read.hunter} />
-          <Bar100 label={fr ? "Score développement" : "Farming score"} value={read.farmer} />
-        </div>
+      ) : null}
+
+      <div className="mt-5 space-y-3">
+        {rows.map(({ code, def, read, score, tier }) => (
+          <div
+            key={code}
+            className={`rounded-2xl border p-3.5 ${
+              tier === "opposite" ? "border-coral/30 bg-coral/5" : "border-cloud/80 bg-white"
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-deep/10 px-2 py-0.5 text-xs font-bold text-deep">{code}</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{l(def.name)}</span>
+              {tierChip(tier)}
+            </div>
+            {score !== null ? (
+              <div className="mt-2">
+                <Bar100 value={score} />
+              </div>
+            ) : null}
+            {tier === "opposite" ? (
+              <p className="mt-2 text-sm text-ink/75">
+                {fr ? "Registre opposé observé : " : "Opposite register observed: "}
+                {l(read.opposite)}.
+              </p>
+            ) : null}
+            {tier === "opposite" || tier === "interview" ? (
+              <p className="mt-1.5 text-xs text-ink/55">
+                {fr ? "À poser en entretien : " : "To ask in interview: "}
+                {l(read.question)}
+              </p>
+            ) : null}
+          </div>
+        ))}
       </div>
 
-      <div
-        className={`mt-5 rounded-2xl p-4 text-sm leading-relaxed ${
-          fit === "match" ? "bg-sky/20 text-ink/80" : fit === "partial" ? "bg-cloud/60 text-ink/80" : "border border-coral/30 bg-coral/5 text-ink/80"
-        }`}
-      >
-        <p>
-          {fr
-            ? `Ce poste exige ${needTxt}. Les préférences déclarées de ${firstName} dessinent ${styleTxt} (conquête ${read.hunter}/100 · développement ${read.farmer}/100).`
-            : `This role requires ${needTxt}. ${firstName}'s declared preferences show ${styleTxt} (hunting ${read.hunter}/100 · farming ${read.farmer}/100).`}
-        </p>
-        <p className="mt-2 font-medium">{verdict}</p>
-        <p className="mt-2 text-xs text-ink/55">
-          {fr ? "À poser en entretien : " : "To ask in interview: "}
-          {questions[0]}
-        </p>
+      <div className="mt-6">
+        <div className="text-xs font-semibold uppercase tracking-wide text-deep/60">
+          {fr ? "Socle (attendu de tous)" : "Core (expected of everyone)"}
+        </div>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {coreRows.map(({ code, def, score, tier }) => (
+            <div key={code} className="flex items-center gap-2 rounded-xl bg-cloud/40 px-3 py-2">
+              <span className="text-[10px] font-bold text-deep/60">{code}</span>
+              <span className="min-w-0 flex-1 truncate text-xs text-ink/75">{l(def.name)}</span>
+              <span
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                  tier === "demonstrated" ? "bg-deep" : tier === "present" ? "bg-sky" : "bg-coral"
+                }`}
+                title={`${score}/100`}
+              />
+              <span className="w-7 text-right text-xs font-semibold text-deep">{score}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -437,8 +460,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
           </div>
         ) : null}
 
-        {role && results && roleCommercialNeed(role.id) ? (
-          <CommercialStyleBlock
+        {role && results && ROLE_EXPECTATIONS_MAP[role.id] ? (
+          <ExpectedCompetenciesBlock
             firstName={person.name.split(" ")[0]}
             roleId={role.id}
             results={results}
