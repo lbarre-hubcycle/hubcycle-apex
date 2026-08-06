@@ -11,7 +11,7 @@ import { PrintButton } from "@/components/ui";
 import { Scale5, TeamMap, type MapDot } from "@/components/charts";
 import { Bar100 } from "@/components/charts";
 import { commercialStyleOf, roleCommercialNeed } from "@/lib/commercial-style";
-import { COMPETENCY_READS, competencyStyleScore, readTier } from "@/lib/competency-read";
+import { COMPETENCY_COACHING, COMPETENCY_READS, competencyStyleScore, readTier } from "@/lib/competency-read";
 import { FRAMEWORK_MAP, ROLE_EXPECTATIONS_MAP } from "@/data/competency-framework";
 import { Disclaimer, ProfileHero, StrengthsWatchouts, WorkstyleBlock } from "@/components/report";
 import type { Person, ProfileId, Team } from "@/lib/types";
@@ -25,19 +25,23 @@ interface Payload {
 
 /**
  * Expected-competencies debrief, generalized to every role: for each
- * competency the role's referential expects, does the candidate's declared
- * style demonstrate it — or lean toward the opposite register? Knowledge
+ * competency the role's referential expects, does the declared style
+ * demonstrate it — or lean toward the opposite register? Knowledge
  * competencies (e.g. B7) are flagged for interview, never fake-scored.
+ * Tone differs by audience: evaluative hypotheses + interview questions
+ * for candidates; development priorities + coaching levers for employees.
  * Full report only — never in the candidate digest.
  */
 function ExpectedCompetenciesBlock({
   firstName,
   roleId,
   results,
+  employee,
 }: {
   firstName: string;
   roleId: string;
   results: NonNullable<Person["results"]>;
+  employee: boolean;
 }) {
   const { l, lang } = useI18n();
   const fr = lang === "fr";
@@ -52,15 +56,22 @@ function ExpectedCompetenciesBlock({
     const styles = {
       demonstrated: "bg-sky/40 text-deep",
       present: "bg-cloud text-ink/60",
-      opposite: "bg-coral/15 text-coral",
+      opposite: employee ? "bg-lavender/40 text-deep" : "bg-coral/15 text-coral",
       interview: "bg-lavender/40 text-deep",
     } as const;
-    const labels = {
-      demonstrated: fr ? "Style aligné" : "Style aligned",
-      present: fr ? "Présent, à confirmer" : "Present, to confirm",
-      opposite: fr ? "Registre opposé" : "Opposite register",
-      interview: fr ? "À évaluer en entretien" : "Assess in interview",
-    } as const;
+    const labels = employee
+      ? ({
+          demonstrated: fr ? "Force d'appui" : "Strength to lean on",
+          present: fr ? "Présent, à consolider" : "Present, to consolidate",
+          opposite: fr ? "Priorité de développement" : "Development priority",
+          interview: fr ? "À évaluer sur le terrain" : "Assess on the job",
+        } as const)
+      : ({
+          demonstrated: fr ? "Style aligné" : "Style aligned",
+          present: fr ? "Présent, à confirmer" : "Present, to confirm",
+          opposite: fr ? "Registre opposé" : "Opposite register",
+          interview: fr ? "À évaluer en entretien" : "Assess in interview",
+        } as const);
     return (
       <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${styles[tier]}`}>
         {labels[tier]}
@@ -84,14 +95,22 @@ function ExpectedCompetenciesBlock({
   return (
     <div className="print-page card">
       <h3 className="font-heading text-lg text-deep">
-        {fr
-          ? "Compétences attendues du poste — le style les démontre-t-il ?"
-          : "The role's expected competencies — does the style demonstrate them?"}
+        {employee
+          ? fr
+            ? "Compétences du poste — forces d'appui et priorités de développement"
+            : "The role's competencies — strengths to lean on and development priorities"
+          : fr
+            ? "Compétences attendues du poste — le style les démontre-t-il ?"
+            : "The role's expected competencies — does the style demonstrate them?"}
       </h3>
       <p className="mt-1 text-xs text-ink/50">
-        {fr
-          ? `Lecture des préférences déclarées de ${firstName} au regard du référentiel du poste. Un style opposé n'est pas un verdict : c'est un point à explorer en entretien.`
-          : `${firstName}'s declared preferences read against the role's referential. An opposite register is not a verdict: it is a point to explore in interview.`}
+        {employee
+          ? fr
+            ? `Lecture des préférences déclarées de ${firstName} au regard du référentiel du poste. Un registre différent n'est pas un jugement : c'est un axe de développement à travailler ensemble.`
+            : `${firstName}'s declared preferences read against the role's referential. A different register is not a judgment: it is a development focus to work on together.`
+          : fr
+            ? `Lecture des préférences déclarées de ${firstName} au regard du référentiel du poste. Un style opposé n'est pas un verdict : c'est un point à explorer en entretien.`
+            : `${firstName}'s declared preferences read against the role's referential. An opposite register is not a verdict: it is a point to explore in interview.`}
       </p>
 
       {gauge && need ? (
@@ -119,7 +138,11 @@ function ExpectedCompetenciesBlock({
           <div
             key={code}
             className={`rounded-2xl border p-3.5 ${
-              tier === "opposite" ? "border-coral/30 bg-coral/5" : "border-cloud/80 bg-white"
+              tier === "opposite"
+                ? employee
+                  ? "border-lavender/60 bg-lavender/10"
+                  : "border-coral/30 bg-coral/5"
+                : "border-cloud/80 bg-white"
             }`}
           >
             <div className="flex flex-wrap items-center gap-2">
@@ -134,14 +157,17 @@ function ExpectedCompetenciesBlock({
             ) : null}
             {tier === "opposite" ? (
               <p className="mt-2 text-sm text-ink/75">
-                {fr ? "Registre opposé observé : " : "Opposite register observed: "}
+                {employee
+                  ? fr ? "Registre naturel différent : " : "Different natural register: "
+                  : fr ? "Registre opposé observé : " : "Opposite register observed: "}
                 {l(read.opposite)}.
               </p>
             ) : null}
             {tier === "opposite" || tier === "interview" ? (
               <p className="mt-1.5 text-xs text-ink/55">
-                {fr ? "À poser en entretien : " : "To ask in interview: "}
-                {l(read.question)}
+                {employee
+                  ? <>{fr ? "Piste de coaching : " : "Coaching lever: "}{l(COMPETENCY_COACHING[code])}</>
+                  : <>{fr ? "À poser en entretien : " : "To ask in interview: "}{l(read.question)}</>}
               </p>
             ) : null}
           </div>
@@ -216,6 +242,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
   const primary = PROFILE_MAP[results.primaryProfile];
   const band = CULTURE_BANDS.find((b) => b.id === results.cultureBand)!;
+  const isEmployee = person.kind === "employee";
+  const fr = lang === "fr";
   const team = person.teamId ? teams.find((tm) => tm.id === person.teamId) : undefined;
   const teammates = team
     ? people.filter(
@@ -273,7 +301,9 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             </button>
           ) : null}
           <Link href={`/admin/people/${person.id}/digest`} className="btn-ghost">
-            {t("report.openDigest")}
+            {person.kind === "employee"
+              ? fr ? "Ouvrir la synthèse" : "Open summary"
+              : t("report.openDigest")}
           </Link>
           <PrintButton label={t("report.downloadPdf")} />
         </div>
@@ -284,7 +314,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-xs font-semibold uppercase tracking-widest text-sky">
-              Apex · {t("report.fullTitle")}
+              Apex · {isEmployee ? t("report.fullTitleEmployee") : t("report.fullTitle")}
             </div>
             <h1 className="mt-2 font-heading text-3xl">{person.name}</h1>
             <p className="mt-1 text-sm text-white/70">
@@ -310,20 +340,32 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               <p className="text-xs text-ink/50">{t("report.cultureVs")}</p>
             </div>
             <div className="text-right">
-              <span
-                className={`rounded-full px-4 py-2 text-sm font-bold ${
-                  results.cultureScore >= 3.7
-                    ? "bg-deep text-white"
-                    : results.cultureScore >= 3
-                      ? "bg-sky text-deep"
-                      : "bg-coral text-white"
-                }`}
-              >
-                {l(band.label)} · {results.cultureScore.toFixed(1)} / 5
-              </span>
+              {isEmployee ? (
+                <span className="rounded-full bg-deep/10 px-4 py-2 text-sm font-bold text-deep">
+                  {fr ? "Manifeste" : "Manifesto"} · {results.cultureScore.toFixed(1)} / 5
+                </span>
+              ) : (
+                <span
+                  className={`rounded-full px-4 py-2 text-sm font-bold ${
+                    results.cultureScore >= 3.7
+                      ? "bg-deep text-white"
+                      : results.cultureScore >= 3
+                        ? "bg-sky text-deep"
+                        : "bg-coral text-white"
+                  }`}
+                >
+                  {l(band.label)} · {results.cultureScore.toFixed(1)} / 5
+                </span>
+              )}
             </div>
           </div>
-          <p className="mt-3 text-sm text-ink/60">{l(band.description)}</p>
+          <p className="mt-3 text-sm text-ink/60">
+            {isEmployee
+              ? fr
+                ? "Lecture de l'alignement déclaré avec le Manifeste — un point de départ pour les conversations de développement, pas une note."
+                : "A read of declared alignment with the Manifesto — a starting point for development conversations, not a grade."
+              : l(band.description)}
+          </p>
           <div className="mt-5 divide-y divide-cloud/70">
             {VALUES.map((v) => {
               const score = results.valueScores[v.id];
@@ -331,7 +373,12 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 score > 3.5
                   ? { title: t("report.valueHigh"), why: v.highWhy, examples: v.highExamples, low: false }
                   : score < 2.7
-                    ? { title: t("report.valueLow"), why: v.lowWhy, examples: v.lowExamples, low: true }
+                    ? {
+                        title: isEmployee ? t("report.valueGrowth") : t("report.valueLow"),
+                        why: v.lowWhy,
+                        examples: v.lowExamples,
+                        low: true,
+                      }
                     : null;
               return (
                 <div key={v.id}>
@@ -339,12 +386,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   {insight ? (
                     <div
                       className={`mb-4 rounded-xl p-3.5 text-xs leading-relaxed ${
-                        insight.low ? "border border-coral/25 bg-coral/5" : "bg-cloud/50"
+                        insight.low
+                          ? isEmployee
+                            ? "border border-lavender/50 bg-lavender/10"
+                            : "border border-coral/25 bg-coral/5"
+                          : "bg-cloud/50"
                       }`}
                     >
                       <div
                         className={`font-semibold uppercase tracking-wide ${
-                          insight.low ? "text-coral" : "text-deep/70"
+                          insight.low ? (isEmployee ? "text-deep/70" : "text-coral") : "text-deep/70"
                         }`}
                       >
                         {insight.title}
@@ -377,6 +428,11 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 <p className="text-xs text-ink/50">
                   {t("report.roleVs")}
                   {role.derived ? " *" : ""}
+                  {isEmployee
+                    ? fr
+                      ? " · lu en développement : les écarts sont des priorités de travail, pas une évaluation"
+                      : " · read for development: gaps are priorities to work on, not an appraisal"
+                    : ""}
                 </p>
                 {ROLE_EXPECTATIONS_MAP[role.id] ? (
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -465,6 +521,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             firstName={person.name.split(" ")[0]}
             roleId={role.id}
             results={results}
+            employee={person.kind === "employee"}
           />
         ) : null}
 

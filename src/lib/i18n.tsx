@@ -144,6 +144,7 @@ const DICT = {
     fr: "Convertir ce·tte candidat·e en collaborateur·rice ? Son rapport basculera dans les vues collaborateurs (Dynamics, Coach, Growth).",
   },
   "report.fullTitle": { en: "Full assessment report", fr: "Rapport d’évaluation complet" },
+  "report.fullTitleEmployee": { en: "Development report", fr: "Rapport de développement" },
   "report.confidential": { en: "Confidential — HR & hiring manager only", fr: "Confidentiel — réservé RH et manager recruteur" },
   "report.digest": { en: "Candidate digest", fr: "Synthèse candidat" },
   "report.digestNote": {
@@ -153,6 +154,7 @@ const DICT = {
   "report.downloadPdf": { en: "Download PDF", fr: "Télécharger le PDF" },
   "report.valueHigh": { en: "Strong alignment — what this typically looks like", fr: "Alignement marqué — ce que cela donne concrètement" },
   "report.valueLow": { en: "Gap to explore — attitudes that may show up", fr: "Écart à explorer — attitudes possibles" },
+  "report.valueGrowth": { en: "Growth focus — to work on together", fr: "Axe de développement — à travailler ensemble" },
   "report.openDigest": { en: "Open candidate digest", fr: "Ouvrir la synthèse candidat" },
   "report.profile": { en: "Natural profile", fr: "Profil naturel" },
   "report.secondary": { en: "Secondary profile", fr: "Profil secondaire" },

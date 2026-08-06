@@ -225,6 +225,86 @@ export const COMPETENCY_READS: Record<string, CompetencyRead> = {
   },
 };
 
+/**
+ * One concrete development lever per competency — used in EMPLOYEE reports
+ * instead of interview questions. A gap on a current employee is a coaching
+ * priority to work on together, never a verdict.
+ */
+export const COMPETENCY_COACHING: Record<string, L10n> = {
+  A1: {
+    en: "Hand over one topic end-to-end with a dated deliverable, then debrief together what held initiative back.",
+    fr: "Confier un sujet de bout en bout avec un livrable daté, puis débriefer ensemble ce qui a freiné l'initiative.",
+  },
+  A2: {
+    en: "Agree on a decision rule (e.g. 70% of the information = we decide) and practice it on one real case per month.",
+    fr: "Fixer ensemble une règle de décision (ex. 70 % de l'information = on tranche) et la pratiquer sur un cas réel par mois.",
+  },
+  A3: {
+    en: "Practice the \"1 minute, 3 messages\" format before every important team update.",
+    fr: "Pratiquer le format « 1 minute, 3 messages » avant chaque point d'équipe important.",
+  },
+  A4: {
+    en: "Assign a shared objective with another team where success is measured on the joint outcome only.",
+    fr: "Confier un objectif partagé avec un autre pôle, où la réussite se mesure uniquement au résultat commun.",
+  },
+  A5: {
+    en: "Run a monthly \"what we learned / what we pivot\" retro on their scope.",
+    fr: "Instaurer une rétro mensuelle « ce qu'on a appris / ce qu'on pivote » sur son périmètre.",
+  },
+  A6: {
+    en: "Put a done-checklist on one recurring deliverable and review it together after 30 days.",
+    fr: "Mettre en place une checklist de fin de tâche sur un livrable récurrent et la revoir ensemble à 30 jours.",
+  },
+  B1: {
+    en: "Protect weekly prospecting slots, with a hunter buddy alongside for the first weeks.",
+    fr: "Sanctuariser des créneaux de prospection hebdomadaires, avec un binôme chasseur en appui les premières semaines.",
+  },
+  B2: {
+    en: "Assign one existing account to grow, with a quarterly account plan reviewed in 1-2-1.",
+    fr: "Confier un compte existant à faire grandir, avec un plan de compte trimestriel revu en 1-2-1.",
+  },
+  B3: {
+    en: "Install a fixed-cadence weekly pipeline review: coverage, next action per deal, forecast vs actual.",
+    fr: "Installer une revue de pipeline hebdomadaire à cadence fixe : couverture, prochaine action par deal, forecast vs réel.",
+  },
+  B4: {
+    en: "Schedule regular non-transactional touchpoints with key partners (no commercial agenda).",
+    fr: "Planifier des points relation réguliers hors transaction avec les partenaires clés (sans agenda commercial).",
+  },
+  B5: {
+    en: "Pick one recurring problem and fix it at the root: documented process + an indicator that it is gone.",
+    fr: "Choisir un problème récurrent et le traiter à la racine : processus documenté + indicateur de disparition.",
+  },
+  B6: {
+    en: "Back each recommendation with a small quantified model (explicit assumptions), reviewed with the manager.",
+    fr: "Adosser chaque recommandation à un mini-modèle chiffré (hypothèses explicites), relu avec le manager.",
+  },
+  B7: {
+    en: "Build a raw-materials upskilling plan (training, quality immersion, internal referent) with milestones.",
+    fr: "Construire un plan de montée en compétence matières (formations, immersion qualité, référent interne) avec des jalons.",
+  },
+  B8: {
+    en: "Ring-fence framed exploration time: one hypothesis tested per quarter, with a stop criterion.",
+    fr: "Réserver un temps d'exploration cadré : une hypothèse testée par trimestre, avec un critère d'arrêt.",
+  },
+  C1: {
+    en: "Structure regular development-first 1-2-1s and set one growth objective per team member.",
+    fr: "Structurer des 1-2-1 réguliers orientés développement et fixer un objectif de progression par membre de l'équipe.",
+  },
+  C2: {
+    en: "Have them write a half-yearly direction note (where we go, what we prioritize, what we stop), challenged in committee.",
+    fr: "Faire rédiger une note de cap semestrielle (où on va, ce qu'on priorise, ce qu'on arrête), challengée en comité.",
+  },
+  C3: {
+    en: "Prepare each key arbitration with a stakeholder map and pre-alignment before the meeting.",
+    fr: "Préparer chaque arbitrage clé avec une carte des parties prenantes et un pré-alignement avant la réunion.",
+  },
+  C4: {
+    en: "Debrief in 1-2-1 the situations where saying no had a cost, and explicitly value those calls in front of the team.",
+    fr: "Débriefer en 1-2-1 les situations où dire non a coûté, et valoriser explicitement ces choix devant l'équipe.",
+  },
+};
+
 const VALUE_IDS = new Set([
   "discernment",
   "boldness",
