@@ -37,8 +37,12 @@ Open http://localhost:3000. Admin access code defaults to `apex-hubcycle-2026` �
 2. Environment variables:
    - **SSO (recommended)**: `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (Google Cloud OAuth client, consent screen type *Internal*, redirect URI `https://<domain>/api/auth/callback/google`). Sign-in is restricted server-side to `@hubcycled.com` (`SSO_ALLOWED_DOMAIN` to change). Set `AUTH_SECRET` (any long random string) and optionally `ADMIN_EMAILS` (comma-separated emails granted the HR role; defaults to lbarre@hubcycled.com).
    - `ADMIN_ACCESS_CODE` — break-glass access code granting the HR role if SSO is down (change the default!).
-   - Storage (recommended): create an **Upstash Redis** database via the Vercel Marketplace and link it to the project; the integration injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically. Without it, the app runs in **demo mode** (in-memory, data lost on redeploy — a banner warns about this).
+   - Storage (recommended): **Postgres via Prisma** — set `DATABASE_URL` to a Neon (or any Postgres) connection string and run `npx prisma migrate deploy` against it once. When `DATABASE_URL` is absent the app falls back to the legacy backends: Upstash Redis (`KV_REST_API_URL` + `KV_REST_API_TOKEN`), then a local JSON file in development, then **demo mode** (in-memory, data lost on redeploy — a banner warns about this).
 3. Deploy. Invitation links look like `https://<your-domain>/a/<token>`.
+
+### Migrating existing Upstash data to Postgres
+
+With `DATABASE_URL`, `KV_REST_API_URL` and `KV_REST_API_TOKEN` all set, sign in with the HR role and call `POST /api/admin/import-kv`: it reads the legacy `apex-db-v1` document from Upstash and upserts it into Postgres. The route is idempotent (safe to run several times; records already migrated are updated in place, records created after the migration are left untouched). Note that the Prisma CLI reads `.env` but not `.env.local` — for local commands, either keep `DATABASE_URL` in `.env` or prefix the command (`DATABASE_URL=... npx prisma migrate dev`).
 
 ## Brand
 

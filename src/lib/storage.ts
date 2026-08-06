@@ -1,14 +1,20 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { Db } from "./types";
+import { Prisma, type Person as PersonRow, type Team as TeamRow } from "@prisma/client";
+import { getPrisma } from "./prisma";
+import type { Answers, Db, Lang, Person, PersonKind, Results, Team, UserRole } from "./types";
 
 /**
  * Pluggable storage.
- * 1. Vercel KV / Upstash Redis via REST when env vars are present
+ * 1. Postgres via Prisma when DATABASE_URL is present (Neon in production).
+ * 2. Vercel KV / Upstash Redis via REST when env vars are present
  *    (KV_REST_API_URL + KV_REST_API_TOKEN, or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN).
- * 2. Local JSON file in development (survives restarts).
- * 3. In-memory fallback (demo mode — data is lost on redeploy; the admin UI
+ * 3. Local JSON file in development (survives restarts).
+ * 4. In-memory fallback (demo mode — data is lost on redeploy; the admin UI
  *    shows a warning when this mode is active on Vercel).
+ *
+ * All backends expose the same whole-document loadDb/saveDb contract the app
+ * is built on; the Postgres backend maps it onto Person/Team tables.
  */
 
 const KEY = "apex-db-v1";
@@ -26,13 +32,96 @@ const useFile = !process.env.VERCEL && process.env.NODE_ENV !== "test";
 
 const g = globalThis as unknown as { __apexDb?: Db };
 
-export function storageMode(): "kv" | "file" | "memory" {
+export function storageMode(): "postgres" | "kv" | "file" | "memory" {
+  if (process.env.DATABASE_URL) return "postgres";
   if (kvConfig()) return "kv";
   if (useFile) return "file";
   return "memory";
 }
 
+// --- Postgres row mapping -------------------------------------------------
+
+function personFromRow(row: PersonRow): Person {
+  return {
+    id: row.id,
+    token: row.token,
+    kind: row.kind as PersonKind,
+    name: row.name,
+    email: row.email ?? undefined,
+    roleId: row.roleId ?? undefined,
+    teamId: row.teamId ?? undefined,
+    functionalTeamId: row.functionalTeamId ?? undefined,
+    managerId: row.managerId ?? undefined,
+    dottedManagerId: row.dottedManagerId ?? undefined,
+    userRole: (row.userRole ?? undefined) as UserRole | undefined,
+    language: (row.language ?? undefined) as Lang | undefined,
+    invitedAt: row.invitedAt,
+    completedAt: row.completedAt ?? undefined,
+    answers: row.answers === null ? undefined : (row.answers as Answers),
+    results: row.results === null ? undefined : (row.results as unknown as Results),
+  };
+}
+
+export function personToRow(p: Person) {
+  return {
+    id: p.id,
+    token: p.token,
+    kind: p.kind,
+    name: p.name,
+    email: p.email ?? null,
+    roleId: p.roleId ?? null,
+    teamId: p.teamId ?? null,
+    functionalTeamId: p.functionalTeamId ?? null,
+    managerId: p.managerId ?? null,
+    dottedManagerId: p.dottedManagerId ?? null,
+    userRole: p.userRole ?? null,
+    language: p.language ?? null,
+    invitedAt: p.invitedAt,
+    completedAt: p.completedAt ?? null,
+    answers: p.answers === undefined ? Prisma.DbNull : (p.answers as Prisma.InputJsonValue),
+    results:
+      p.results === undefined ? Prisma.DbNull : (p.results as unknown as Prisma.InputJsonValue),
+  };
+}
+
+function teamFromRow(row: TeamRow): Team {
+  return { id: row.id, name: row.name };
+}
+
+async function loadFromPostgres(): Promise<Db> {
+  const prisma = getPrisma();
+  const [people, teams] = await Promise.all([
+    // invitedAt is ISO-8601, so lexicographic order == chronological order,
+    // matching the insertion order the JSON-document backends preserved.
+    prisma.person.findMany({ orderBy: { invitedAt: "asc" } }),
+    prisma.team.findMany({ orderBy: { name: "asc" } }),
+  ]);
+  return { people: people.map(personFromRow), teams: teams.map(teamFromRow) };
+}
+
+async function saveToPostgres(db: Db): Promise<void> {
+  const prisma = getPrisma();
+  const personIds = db.people.map((p) => p.id);
+  const teamIds = db.teams.map((t) => t.id);
+  // Full sync in one transaction: the app mutates a whole Db snapshot, so we
+  // upsert every record and delete the ones no longer present.
+  await prisma.$transaction([
+    ...db.people.map((p) => {
+      const row = personToRow(p);
+      return prisma.person.upsert({ where: { id: p.id }, create: row, update: row });
+    }),
+    prisma.person.deleteMany({ where: { id: { notIn: personIds } } }),
+    ...db.teams.map((t) =>
+      prisma.team.upsert({ where: { id: t.id }, create: t, update: { name: t.name } })
+    ),
+    prisma.team.deleteMany({ where: { id: { notIn: teamIds } } }),
+  ]);
+}
+
+// --- Public API -----------------------------------------------------------
+
 export async function loadDb(): Promise<Db> {
+  if (process.env.DATABASE_URL) return loadFromPostgres();
   const kv = kvConfig();
   if (kv) {
     const res = await fetch(`${kv.url}/get/${KEY}`, {
@@ -56,6 +145,7 @@ export async function loadDb(): Promise<Db> {
 }
 
 export async function saveDb(db: Db): Promise<void> {
+  if (process.env.DATABASE_URL) return saveToPostgres(db);
   const kv = kvConfig();
   if (kv) {
     const res = await fetch(`${kv.url}/set/${KEY}`, {

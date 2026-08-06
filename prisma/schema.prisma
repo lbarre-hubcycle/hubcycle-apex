@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Mirrors the Person interface in src/lib/types.ts. Timestamps are kept as
+// ISO-8601 strings (the shape the app produces and consumes everywhere);
+// answers and results are stored as JSON documents.
+model Person {
+  id               String  @id
+  token            String  @unique
+  kind             String // "candidate" | "employee"
+  name             String
+  email            String?
+  roleId           String?
+  teamId           String?
+  functionalTeamId String?
+  managerId        String?
+  dottedManagerId  String?
+  userRole         String? // "hr" | "manager" | "recruiter" | "employee"
+  language         String? // "en" | "fr"
+  invitedAt        String
+  completedAt      String?
+  answers          Json?
+  results          Json?
+}
+
+// Mirrors the Team interface in src/lib/types.ts.
+model Team {
+  id   String @id
+  name String
+}
