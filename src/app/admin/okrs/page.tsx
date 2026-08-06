@@ -143,6 +143,10 @@ export default function OkrsPage() {
 
   const SEED_PERIODS = ["2026", "2026-Q1", "2026-Q2", "2026-Q3"];
   const seedMissing = SEED_PERIODS.filter((p) => !okrs.some((o) => o.period === p));
+  // The first seed shipped French-only text — offer the bilingual upgrade.
+  const legacyTexts = okrs.some(
+    (o) => typeof o.objective === "string" && o.objective.startsWith("Livrer ce qui est vendu")
+  );
 
   return (
     <div>
@@ -205,15 +209,19 @@ export default function OkrsPage() {
         )}
       </div>
 
-      {isHr && seedMissing.length ? (
+      {isHr && (seedMissing.length || legacyTexts) ? (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-coral/25 bg-coral/5 px-4 py-3">
           <span className="text-xs text-ink/70">
-            {fr
-              ? `Proposition 2026 simplifiée disponible (${seedMissing.join(", ")}) — annuel + trimestres, avec les résultats réels Q1-Q2.`
-              : `Simplified 2026 proposal available (${seedMissing.join(", ")}) — annual + quarters, with actual Q1-Q2 results.`}
+            {seedMissing.length
+              ? fr
+                ? `Proposition 2026 simplifiée disponible (${seedMissing.join(", ")}) — annuel + trimestres, avec les résultats réels Q1-Q2.`
+                : `Simplified 2026 proposal available (${seedMissing.join(", ")}) — annual + quarters, with actual Q1-Q2 results.`
+              : fr
+                ? "Des textes de la première proposition sont en français uniquement — la mise à jour les rend bilingues (vos modifications sont conservées)."
+                : "Some texts from the first proposal are French-only — the update makes them bilingual (your edits are preserved)."}
           </span>
           <button onClick={() => void seed()} disabled={busy} className="btn-coral !px-4 !py-2 !text-xs">
-            {busy ? "…" : fr ? "Charger" : "Load"}
+            {busy ? "…" : seedMissing.length ? (fr ? "Charger" : "Load") : fr ? "Mettre à jour" : "Update"}
           </button>
         </div>
       ) : null}

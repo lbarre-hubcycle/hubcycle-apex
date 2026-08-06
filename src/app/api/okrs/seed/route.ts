@@ -369,6 +369,44 @@ function q2Seed(): Okr[] {
   ];
 }
 
+/**
+ * Upgrade pass: an earlier seed shipped French-only strings. Any text that
+ * still EXACTLY matches a seeded French string is swapped for its bilingual
+ * version — edited texts don't match and stay untouched; ids, check-ins and
+ * values are preserved.
+ */
+function upgradeLegacyTexts(okrs: Okr[], seeds: Okr[]): number {
+  const map = new Map<string, OkrText>();
+  const learn = (v: OkrText | undefined) => {
+    if (v && typeof v === "object") map.set(v.fr, v);
+  };
+  for (const o of seeds) {
+    learn(o.objective);
+    learn(o.description);
+    for (const k of o.keyResults) {
+      learn(k.title);
+      learn(k.swot);
+    }
+  }
+  let upgraded = 0;
+  const fix = <T extends OkrText | undefined>(v: T): T => {
+    if (typeof v === "string" && map.has(v)) {
+      upgraded++;
+      return map.get(v) as T;
+    }
+    return v;
+  };
+  for (const o of okrs) {
+    o.objective = fix(o.objective);
+    o.description = fix(o.description);
+    for (const k of o.keyResults) {
+      k.title = fix(k.title);
+      k.swot = fix(k.swot);
+    }
+  }
+  return upgraded;
+}
+
 export async function POST() {
   const viewer = await getViewer();
   if (viewer?.role !== "hr") return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -380,11 +418,15 @@ export async function POST() {
     "2026-Q2": q2Seed,
     "2026-Q3": q3Seed,
   };
+  const allSeeds = Object.values(seeds).flatMap((make) => make());
+  const upgraded = upgradeLegacyTexts(okrs, allSeeds);
   // Seed only the periods that are still empty — never touch edited ones.
   const missing = Object.keys(seeds).filter((p) => !okrs.some((o) => o.period === p));
-  if (!missing.length) return NextResponse.json({ error: "nothing to seed" }, { status: 400 });
+  if (!missing.length && !upgraded) {
+    return NextResponse.json({ error: "nothing to do" }, { status: 400 });
+  }
   const seeded = missing.flatMap((p) => seeds[p]());
   db.okrs = [...okrs, ...seeded];
   await saveDb(db);
-  return NextResponse.json({ ok: true, periods: missing, count: seeded.length });
+  return NextResponse.json({ ok: true, periods: missing, count: seeded.length, upgraded });
 }
