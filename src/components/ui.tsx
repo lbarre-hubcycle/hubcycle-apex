@@ -38,16 +38,48 @@ export function LangToggle() {
 
 export type ShellViewer = { role: "hr" | "manager" | "recruiter" | "employee"; name: string; legacy: boolean };
 
-const NAV = [
-  { href: "/admin/recruit", key: "nav.recruit" as const, roles: ["hr", "recruiter"] },
-  { href: "/admin/dynamics", key: "nav.dynamics" as const, roles: ["hr", "manager"] },
-  { href: "/admin/coach", key: "nav.coach" as const, roles: ["hr", "manager"] },
-  { href: "/admin/growth", key: "nav.growth" as const, roles: ["hr", "manager"] },
-  { href: "/admin/insights", key: "nav.insights" as const, roles: ["hr"] },
-  { href: "/admin/me", key: "nav.me" as const, roles: ["hr", "manager", "employee"] },
-  { href: "/admin/referential", key: "nav.referential" as const, roles: ["hr"] },
-  { href: "/admin/settings", key: "nav.settings" as const, roles: ["hr"] },
-  { href: "/admin/methodology", key: "nav.methodology" as const, roles: ["hr", "manager", "recruiter", "employee"] },
+type Role = ShellViewer["role"];
+const ALL: Role[] = ["hr", "manager", "recruiter", "employee"];
+
+/** Audience-based structure: Cockpit (me) / My Crew (team) / Hubcycle (company) / Recruit / Admin. */
+const GROUPS: {
+  id: string;
+  key: "nav.cockpit" | "nav.crew" | "nav.company" | "nav.recruit" | "nav.settings";
+  items: { href: string; key: "nav.me" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.settings"; roles: Role[] }[];
+}[] = [
+  {
+    id: "cockpit",
+    key: "nav.cockpit",
+    items: [{ href: "/admin/me", key: "nav.me", roles: ["hr", "manager", "employee"] }],
+  },
+  {
+    id: "crew",
+    key: "nav.crew",
+    items: [
+      { href: "/admin/dynamics", key: "nav.dynamics", roles: ["hr", "manager"] },
+      { href: "/admin/coach", key: "nav.coach", roles: ["hr", "manager"] },
+      { href: "/admin/growth", key: "nav.growth", roles: ["hr", "manager"] },
+    ],
+  },
+  {
+    id: "company",
+    key: "nav.company",
+    items: [
+      { href: "/admin/insights", key: "nav.insights", roles: ["hr"] },
+      { href: "/admin/referential", key: "nav.referential", roles: ALL },
+      { href: "/admin/methodology", key: "nav.methodology", roles: ALL },
+    ],
+  },
+  {
+    id: "recruit",
+    key: "nav.recruit",
+    items: [{ href: "/admin/recruit", key: "nav.recruit", roles: ["hr", "recruiter"] }],
+  },
+  {
+    id: "admin",
+    key: "nav.settings",
+    items: [{ href: "/admin/settings", key: "nav.settings", roles: ["hr"] }],
+  },
 ];
 
 export function AdminShell({
@@ -62,7 +94,11 @@ export function AdminShell({
   const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
-  const nav = NAV.filter((n) => n.roles.includes(viewer.role));
+  const groups = GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((i) => i.roles.includes(viewer.role)),
+  })).filter((g) => g.items.length > 0);
+  const activeGroup = groups.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -78,17 +114,17 @@ export function AdminShell({
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-5 py-3">
           <Logo />
           <nav className="flex flex-1 flex-wrap items-center gap-1 text-sm">
-            {nav.map((n) => (
+            {groups.map((g) => (
               <Link
-                key={n.href}
-                href={n.href}
-                className={`rounded-full px-3 py-1.5 font-medium transition-colors ${
-                  pathname.startsWith(n.href)
+                key={g.id}
+                href={g.items[0].href}
+                className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${
+                  activeGroup?.id === g.id
                     ? "bg-deep text-white"
                     : "text-deep/70 hover:bg-cloud hover:text-deep"
                 }`}
               >
-                {t(n.key)}
+                {t(g.key)}
               </Link>
             ))}
           </nav>
@@ -101,6 +137,25 @@ export function AdminShell({
             {t("nav.logout")}
           </button>
         </div>
+        {activeGroup && activeGroup.items.length > 1 ? (
+          <div className="border-t border-cloud/70 bg-white/70">
+            <div className="mx-auto flex max-w-6xl items-center gap-1 px-5 py-1.5 text-xs">
+              {activeGroup.items.map((i) => (
+                <Link
+                  key={i.href}
+                  href={i.href}
+                  className={`rounded-full px-3 py-1 font-medium transition-colors ${
+                    pathname.startsWith(i.href)
+                      ? "bg-sky/50 text-deep"
+                      : "text-ink/55 hover:bg-cloud hover:text-deep"
+                  }`}
+                >
+                  {t(i.key)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {demoMode ? (
           <div className="bg-coral/10 px-5 py-1.5 text-center text-xs font-medium text-coral">
             {t("common.demo")}
