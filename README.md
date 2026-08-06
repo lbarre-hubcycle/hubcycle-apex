@@ -35,7 +35,8 @@ Open http://localhost:3000. Admin access code defaults to `apex-hubcycle-2026` �
 
 1. Import this repository in Vercel (framework auto-detected: Next.js).
 2. Environment variables:
-   - `ADMIN_ACCESS_CODE` — the admin access code (required; HR & hiring managers only).
+   - **SSO (recommended)**: `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` (Google Cloud OAuth client, consent screen type *Internal*, redirect URI `https://<domain>/api/auth/callback/google`). Sign-in is restricted server-side to `@hubcycled.com` (`SSO_ALLOWED_DOMAIN` to change). Set `AUTH_SECRET` (any long random string) and optionally `ADMIN_EMAILS` (comma-separated emails granted the HR role; defaults to lbarre@hubcycled.com).
+   - `ADMIN_ACCESS_CODE` — break-glass access code granting the HR role if SSO is down (change the default!).
    - Storage (recommended): create an **Upstash Redis** database via the Vercel Marketplace and link it to the project; the integration injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically. Without it, the app runs in **demo mode** (in-memory, data lost on redeploy — a banner warns about this).
 3. Deploy. Invitation links look like `https://<your-domain>/a/<token>`.
 
@@ -45,9 +46,13 @@ Follows the Hubcycle Brandbook 2025: deep teal `#00414F`, coral `#FF684D`, light
 
 ## Access control
 
-- Admins (shared access code, httpOnly session cookie) see everything.
-- Assessment-takers authenticate only through their private invitation token and can never see results — not even their own — through the app; HR shares the printable digest at its discretion.
-- PDF export = print-optimized report pages (use the "Download PDF" button → save as PDF).
+Four roles, resolved from the signed-in Google account (matched to a person's email in the Admin panel) and enforced server-side in every API:
+- **HR admin** — everything (assigned via `ADMIN_EMAILS` or the Access column in the Admin panel).
+- **Manager** — auto-detected (someone reports to them, direct or dotted) or assigned: their reports, their teams and the candidates attached to those teams.
+- **Recruiter** — candidates only.
+- **Employee** — their own Apex Me space only (profile, strengths, growth focus — no comparisons).
+
+The legacy `ADMIN_ACCESS_CODE` login remains as a break-glass path (HR role). For local development set `AUTH_DEV_MODE=true` to enable a passwordless email sign-in (disabled on Vercel). Candidates never log in: they use their private invitation token and can never see results through the app; HR shares the printable digest at its discretion. PDF export = print-optimized report pages.
 
 ## Data sources
 

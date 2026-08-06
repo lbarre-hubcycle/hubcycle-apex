@@ -155,6 +155,9 @@ export interface Results {
 
 export type PersonKind = "candidate" | "employee";
 
+/** Platform access role, assigned in the Admin panel (SSO users). */
+export type UserRole = "hr" | "manager" | "recruiter" | "employee";
+
 export interface Person {
   id: string;
   token: string; // secret link token for taking the assessment
@@ -170,6 +173,8 @@ export interface Person {
   managerId?: string;
   /** Employee id of this person's dotted-line (functional) manager. */
   dottedManagerId?: string;
+  /** Access role when this person signs in through SSO. Defaults to employee (or manager if others report to them). */
+  userRole?: UserRole;
   language?: Lang;
   invitedAt: string;
   completedAt?: string;

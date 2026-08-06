@@ -36,23 +36,37 @@ export function LangToggle() {
   );
 }
 
+export type ShellViewer = { role: "hr" | "manager" | "recruiter" | "employee"; name: string; legacy: boolean };
+
 const NAV = [
-  { href: "/admin/recruit", key: "nav.recruit" as const },
-  { href: "/admin/dynamics", key: "nav.dynamics" as const },
-  { href: "/admin/coach", key: "nav.coach" as const },
-  { href: "/admin/growth", key: "nav.growth" as const },
-  { href: "/admin/insights", key: "nav.insights" as const },
-  { href: "/admin/settings", key: "nav.settings" as const },
-  { href: "/admin/methodology", key: "nav.methodology" as const },
+  { href: "/admin/recruit", key: "nav.recruit" as const, roles: ["hr", "recruiter"] },
+  { href: "/admin/dynamics", key: "nav.dynamics" as const, roles: ["hr", "manager"] },
+  { href: "/admin/coach", key: "nav.coach" as const, roles: ["hr", "manager"] },
+  { href: "/admin/growth", key: "nav.growth" as const, roles: ["hr", "manager"] },
+  { href: "/admin/insights", key: "nav.insights" as const, roles: ["hr"] },
+  { href: "/admin/me", key: "nav.me" as const, roles: ["hr", "manager", "employee"] },
+  { href: "/admin/settings", key: "nav.settings" as const, roles: ["hr"] },
+  { href: "/admin/methodology", key: "nav.methodology" as const, roles: ["hr", "manager", "recruiter", "employee"] },
 ];
 
-export function AdminShell({ children, demoMode }: { children: React.ReactNode; demoMode?: boolean }) {
+export function AdminShell({
+  children,
+  demoMode,
+  viewer,
+}: {
+  children: React.ReactNode;
+  demoMode?: boolean;
+  viewer: ShellViewer;
+}) {
   const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
+  const nav = NAV.filter((n) => n.roles.includes(viewer.role));
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
+    const { signOut } = await import("next-auth/react");
+    await signOut({ redirect: false }).catch(() => {});
     router.push("/");
     router.refresh();
   }
@@ -63,7 +77,7 @@ export function AdminShell({ children, demoMode }: { children: React.ReactNode; 
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-5 py-3">
           <Logo />
           <nav className="flex flex-1 flex-wrap items-center gap-1 text-sm">
-            {NAV.map((n) => (
+            {nav.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
@@ -77,6 +91,10 @@ export function AdminShell({ children, demoMode }: { children: React.ReactNode; 
               </Link>
             ))}
           </nav>
+          <span className="hidden text-xs text-ink/45 sm:inline">
+            {viewer.name}
+            {viewer.legacy ? " · code" : ""}
+          </span>
           <LangToggle />
           <button onClick={logout} className="text-xs font-semibold text-deep/50 hover:text-deep">
             {t("nav.logout")}

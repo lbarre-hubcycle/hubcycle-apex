@@ -15,6 +15,37 @@ const DICT = {
   "nav.growth": { en: "Apex Growth", fr: "Apex Growth" },
   "nav.insights": { en: "Apex Insights", fr: "Apex Insights" },
   "nav.settings": { en: "Admin", fr: "Admin" },
+  "nav.me": { en: "Apex Me", fr: "Apex Me" },
+  "login.sso": { en: "Sign in with Google", fr: "Se connecter avec Google" },
+  "login.ssoNote": {
+    en: "Access is reserved for Hubcycle accounts (@hubcycled.com).",
+    fr: "L\u2019acc\u00e8s est r\u00e9serv\u00e9 aux comptes Hubcycle (@hubcycled.com).",
+  },
+  "login.legacy": { en: "Use the backup access code", fr: "Utiliser le code d\u2019acc\u00e8s de secours" },
+  "me.title": { en: "Apex Me", fr: "Apex Me" },
+  "me.sub": {
+    en: "Your profile, your strengths, your development focus.",
+    fr: "Votre profil, vos forces, votre axe de d\u00e9veloppement.",
+  },
+  "me.notLinked": {
+    en: "Your account is not linked to an Apex profile yet. Ask HR to add your @hubcycled.com email to your record in the Admin panel.",
+    fr: "Votre compte n\u2019est pas encore reli\u00e9 \u00e0 un profil Apex. Demandez aux RH d\u2019ajouter votre e-mail @hubcycled.com \u00e0 votre fiche dans le panneau Admin.",
+  },
+  "me.noResults": {
+    en: "You haven\u2019t completed your assessment yet. HR will send you your personal link.",
+    fr: "Vous n\u2019avez pas encore compl\u00e9t\u00e9 votre \u00e9valuation. Les RH vous enverront votre lien personnel.",
+  },
+  "me.growthFocus": { en: "Growth focus", fr: "Axe de d\u00e9veloppement" },
+  "me.growthHint": {
+    en: "This focus comes from your assessment. Goals and commitments linked to it arrive in the next Apex Growth release.",
+    fr: "Cet axe vient de votre \u00e9valuation. Les objectifs et engagements associ\u00e9s arrivent dans la prochaine version d\u2019Apex Growth.",
+  },
+  "settings.access": { en: "Access", fr: "Acc\u00e8s" },
+  "settings.email": { en: "Email (SSO)", fr: "E-mail (SSO)" },
+  "role.hr": { en: "HR admin", fr: "Admin RH" },
+  "role.manager": { en: "Manager", fr: "Manager" },
+  "role.recruiter": { en: "Recruiter", fr: "Recruteur\u00b7se" },
+  "role.employee": { en: "Employee", fr: "Employ\u00e9\u00b7e" },
   "nav.methodology": { en: "Methodology", fr: "Méthodologie" },
   "settings.title": { en: "Administration", fr: "Administration" },
   "settings.sub": {

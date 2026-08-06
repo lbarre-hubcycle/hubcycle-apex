@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
+import { getViewer } from "@/lib/auth";
 import { loadDb, newId, newToken, saveDb } from "@/lib/storage";
 import type { Person, PersonKind } from "@/lib/types";
 
 export async function POST(req: Request) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const viewer = await getViewer();
+  if (!viewer || (viewer.role !== "hr" && viewer.role !== "recruiter")) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const body = (await req.json()) as {
     name?: string;
     email?: string;

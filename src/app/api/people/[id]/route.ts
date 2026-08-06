@@ -1,26 +1,33 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
+import { canViewPerson, getViewer } from "@/lib/auth";
 import { loadDb, saveDb } from "@/lib/storage";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Params) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const viewer = await getViewer();
+  if (!viewer) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const db = await loadDb();
   const person = db.people.find((p) => p.id === id);
   if (!person) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (!canViewPerson(db, viewer, person)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   return NextResponse.json({ person, teams: db.teams, people: db.people });
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const viewer = await getViewer();
+  if (viewer?.role !== "hr") return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
-  const patch = (await req.json()) as { name?: string; roleId?: string; teamId?: string; functionalTeamId?: string; managerId?: string; dottedManagerId?: string; kind?: "candidate" | "employee" };
+  const patch = (await req.json()) as { name?: string; email?: string; roleId?: string; teamId?: string; functionalTeamId?: string; managerId?: string; dottedManagerId?: string; kind?: "candidate" | "employee"; userRole?: "hr" | "manager" | "recruiter" | "employee" | "" };
   const db = await loadDb();
   const person = db.people.find((p) => p.id === id);
   if (!person) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (patch.name?.trim()) person.name = patch.name.trim();
+  if ("email" in patch) person.email = patch.email?.trim().toLowerCase() || undefined;
+  if ("userRole" in patch) person.userRole = patch.userRole || undefined;
   if ("roleId" in patch) person.roleId = patch.roleId || undefined;
   if ("teamId" in patch) person.teamId = patch.teamId || undefined;
   if ("functionalTeamId" in patch) person.functionalTeamId = patch.functionalTeamId || undefined;
@@ -32,9 +39,14 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const viewer = await getViewer();
+  if (!viewer) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const db = await loadDb();
+  const target = db.people.find((p) => p.id === id);
+  const allowed =
+    viewer.role === "hr" || (viewer.role === "recruiter" && target?.kind === "candidate");
+  if (!allowed) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   db.people = db.people.filter((p) => p.id !== id);
   await saveDb(db);
   return NextResponse.json({ ok: true });

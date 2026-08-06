@@ -127,6 +127,8 @@ export default function SettingsPage() {
           <thead>
             <tr className="border-b border-cloud text-left text-xs uppercase tracking-wide text-deep/60">
               <th className="px-5 py-3">{t("recruit.name")}</th>
+              <th className="px-5 py-3">{t("settings.email")}</th>
+              <th className="px-5 py-3">{t("settings.access")}</th>
               <th className="px-5 py-3">{t("recruit.kind")}</th>
               <th className="px-5 py-3">{t("common.role")}</th>
               <th className="px-5 py-3">{t("report.profile")}</th>
@@ -144,6 +146,22 @@ export default function SettingsPage() {
                 <tr key={p.id} className="border-b border-cloud/60">
                   <td className="px-5 py-3 font-medium text-ink">
                     <NameCell name={p.name} onSave={(name) => patchPerson(p.id, { name })} />
+                  </td>
+                  <td className="px-5 py-3">
+                    <NameCell name={p.email ?? ""} onSave={(email) => patchPerson(p.id, { email })} />
+                  </td>
+                  <td className="px-5 py-3">
+                    <select
+                      className="input !w-36 !py-1.5"
+                      value={p.userRole ?? ""}
+                      onChange={(e) => patchPerson(p.id, { userRole: e.target.value })}
+                    >
+                      <option value="">{t("role.employee")} (auto)</option>
+                      <option value="employee">{t("role.employee")}</option>
+                      <option value="manager">{t("role.manager")}</option>
+                      <option value="recruiter">{t("role.recruiter")}</option>
+                      <option value="hr">{t("role.hr")}</option>
+                    </select>
                   </td>
                   <td className="px-5 py-3 text-ink/60">
                     {p.kind === "candidate" ? t("recruit.candidate") : t("recruit.employee")}
