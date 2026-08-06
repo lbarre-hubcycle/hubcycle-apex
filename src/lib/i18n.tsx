@@ -21,6 +21,7 @@ const DICT = {
   "nav.company": { en: "Hubcycle", fr: "Hubcycle" },
   "nav.compare": { en: "Compare", fr: "Comparateur" },
   "nav.feedback": { en: "Feedback", fr: "Feedback" },
+  "nav.goals": { en: "Objectives", fr: "Objectifs" },
   "nav.referential": { en: "Referential", fr: "R\u00e9f\u00e9rentiel" },
   "ref.title": { en: "Competency & KPI referential", fr: "R\u00e9f\u00e9rentiel comp\u00e9tences et KPI" },
   "ref.sub": {

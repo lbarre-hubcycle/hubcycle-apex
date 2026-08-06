@@ -6,6 +6,7 @@ import type {
   Answers,
   Db,
   FeedbackItem,
+  Goal,
   Lang,
   Person,
   PersonKind,
@@ -70,6 +71,7 @@ function personFromRow(row: PersonRow): Person {
     answers: row.answers === null ? undefined : (row.answers as Answers),
     results: row.results === null ? undefined : (row.results as unknown as Results),
     feedback: row.feedback === null ? undefined : (row.feedback as unknown as FeedbackItem[]),
+    goals: row.goals === null ? undefined : (row.goals as unknown as Goal[]),
   };
 }
 
@@ -94,6 +96,7 @@ export function personToRow(p: Person) {
       p.results === undefined ? Prisma.DbNull : (p.results as unknown as Prisma.InputJsonValue),
     feedback:
       p.feedback === undefined ? Prisma.DbNull : (p.feedback as unknown as Prisma.InputJsonValue),
+    goals: p.goals === undefined ? Prisma.DbNull : (p.goals as unknown as Prisma.InputJsonValue),
   };
 }
 

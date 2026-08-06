@@ -45,13 +45,14 @@ const ALL: Role[] = ["hr", "manager", "recruiter", "employee"];
 const GROUPS: {
   id: string;
   key: "nav.cockpit" | "nav.crew" | "nav.company" | "nav.recruit" | "nav.settings";
-  items: { href: string; key: "nav.me" | "nav.feedback" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.compare" | "nav.settings"; roles: Role[] }[];
+  items: { href: string; key: "nav.me" | "nav.goals" | "nav.feedback" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.compare" | "nav.settings"; roles: Role[] }[];
 }[] = [
   {
     id: "cockpit",
     key: "nav.cockpit",
     items: [
       { href: "/admin/me", key: "nav.me", roles: ["hr", "manager", "employee"] },
+      { href: "/admin/goals", key: "nav.goals", roles: ["hr", "manager", "employee"] },
       { href: "/admin/feedback", key: "nav.feedback", roles: ["hr", "manager", "employee"] },
     ],
   },

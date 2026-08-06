@@ -177,6 +177,35 @@ export interface FeedbackItem {
   createdAt: string;
 }
 
+/** Goals & commitments (Cockpit). */
+export type GoalKind = "performance" | "development";
+export type GoalStatus = "on-track" | "at-risk" | "done" | "dropped";
+
+export interface GoalCheckin {
+  date: string;
+  status: GoalStatus;
+  progress: number; // 0–100
+  note?: string;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  description?: string;
+  kind: GoalKind;
+  /** Framework competency code, for development goals. */
+  competency?: string;
+  /** KPI this goal commits to, for performance goals (from the role referential or free text). */
+  kpi?: string;
+  targetDate?: string; // ISO date
+  status: GoalStatus;
+  progress: number; // 0–100
+  checkins: GoalCheckin[];
+  createdAt: string;
+  createdById: string;
+  createdByName: string;
+}
+
 export type PersonKind = "candidate" | "employee";
 
 /** Platform access role, assigned in the Admin panel (SSO users). */
@@ -206,6 +235,8 @@ export interface Person {
   results?: Results;
   /** Instant feedback received (employees only). Visibility filtered server-side. */
   feedback?: FeedbackItem[];
+  /** Goals & commitments (employees only). Visible to self, managers and HR. */
+  goals?: Goal[];
 }
 
 export interface Team {

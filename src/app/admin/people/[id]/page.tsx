@@ -15,6 +15,7 @@ import { COMPETENCY_COACHING, COMPETENCY_READS, competencyStyleScore, readTier }
 import { FRAMEWORK_MAP, ROLE_EXPECTATIONS_MAP } from "@/data/competency-framework";
 import { Disclaimer, ProfileHero, StrengthsWatchouts, WorkstyleBlock } from "@/components/report";
 import { FeedbackCard } from "@/components/feedback";
+import { GoalCard } from "@/components/goals";
 import type { Person, ProfileId, Team } from "@/lib/types";
 
 interface Payload {
@@ -581,6 +582,20 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   <li key={i}>→ {l(m)}</li>
                 ))}
               </ul>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Personal objectives & commitments (read-only context; managed in Cockpit > Objectives) */}
+        {isEmployee && person.goals?.length ? (
+          <div className="print-page card">
+            <h3 className="font-heading text-lg text-deep">
+              {fr ? "Objectifs personnels & engagements" : "Personal objectives & commitments"}
+            </h3>
+            <div className="mt-4 space-y-3">
+              {person.goals.map((goal) => (
+                <GoalCard key={goal.id} goal={goal} />
+              ))}
             </div>
           </div>
         ) : null}
