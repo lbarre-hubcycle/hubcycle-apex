@@ -16,6 +16,21 @@ const DICT = {
   "nav.insights": { en: "Apex Insights", fr: "Apex Insights" },
   "nav.settings": { en: "Admin", fr: "Admin" },
   "nav.me": { en: "Apex Me", fr: "Apex Me" },
+  "nav.referential": { en: "Referential", fr: "R\u00e9f\u00e9rentiel" },
+  "ref.title": { en: "Competency & KPI referential", fr: "R\u00e9f\u00e9rentiel comp\u00e9tences et KPI" },
+  "ref.sub": {
+    en: "The validated framework: 18 competencies (3 families, 3 levels) and each role's KPIs. Powers candidate debriefs, feedback and reviews.",
+    fr: "Le r\u00e9f\u00e9rentiel valid\u00e9 : 18 comp\u00e9tences (3 familles, 3 niveaux) et les KPI de chaque poste. Alimente les d\u00e9briefs candidats, le feedback et les entretiens.",
+  },
+  "ref.tabCompetencies": { en: "The 18 competencies", fr: "Les 18 comp\u00e9tences" },
+  "ref.tabRoles": { en: "KPIs & competencies by role", fr: "KPI et comp\u00e9tences par poste" },
+  "ref.keyKpi": { en: "Key KPI", fr: "KPI cl\u00e9" },
+  "ref.secondaryKpis": { en: "Secondary KPIs", fr: "KPI secondaires" },
+  "ref.competencies": { en: "Competencies (B/C)", fr: "Comp\u00e9tences (B/C)" },
+  "ref.coreNote": {
+    en: "The 6 core competencies (A1-A6) apply to every role and are not repeated. Hover a code for the competency name.",
+    fr: "Les 6 comp\u00e9tences socle (A1-A6) s\u2019appliquent \u00e0 tous les postes et ne sont pas r\u00e9p\u00e9t\u00e9es. Survolez un code pour voir le nom de la comp\u00e9tence.",
+  },
   "login.sso": { en: "Sign in with Google", fr: "Se connecter avec Google" },
   "login.ssoNote": {
     en: "Access is reserved for Hubcycle accounts (@hubcycled.com).",

@@ -45,6 +45,7 @@ const NAV = [
   { href: "/admin/growth", key: "nav.growth" as const, roles: ["hr", "manager"] },
   { href: "/admin/insights", key: "nav.insights" as const, roles: ["hr"] },
   { href: "/admin/me", key: "nav.me" as const, roles: ["hr", "manager", "employee"] },
+  { href: "/admin/referential", key: "nav.referential" as const, roles: ["hr"] },
   { href: "/admin/settings", key: "nav.settings" as const, roles: ["hr"] },
   { href: "/admin/methodology", key: "nav.methodology" as const, roles: ["hr", "manager", "recruiter", "employee"] },
 ];
