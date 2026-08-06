@@ -24,9 +24,14 @@ export interface Viewer {
   personId?: string;
   /** True when authenticated through the legacy access code. */
   legacy?: boolean;
+  /** True when an HR admin is impersonating this person ("view as"). */
+  viewingAs?: boolean;
+  /** The real admin's display name while impersonating. */
+  realName?: string;
 }
 
 const COOKIE = "apex_session";
+const VIEW_AS_COOKIE = "apex_viewas";
 
 export function accessCode(): string {
   return process.env.ADMIN_ACCESS_CODE || "apex-hubcycle-2026";
@@ -49,8 +54,8 @@ function adminEmails(): string[] {
     .filter(Boolean);
 }
 
-/** Resolve the current viewer (SSO session or legacy cookie). Null = not signed in. */
-export async function getViewer(): Promise<Viewer | null> {
+/** The authenticated identity, ignoring any "view as" impersonation. */
+export async function getRealViewer(): Promise<Viewer | null> {
   const session = await auth().catch(() => null);
   const email = session?.user?.email?.toLowerCase();
   if (email) {
@@ -73,6 +78,55 @@ export async function getViewer(): Promise<Viewer | null> {
   }
   if (await legacyAdmin()) return { role: "hr", legacy: true };
   return null;
+}
+
+/**
+ * Resolve the current viewer. When an HR admin has a "view as" cookie set,
+ * the effective viewer becomes that employee (with the role they would
+ * naturally have — never hr), so the admin can test the platform exactly as
+ * that person sees it. Impersonation only ever narrows rights.
+ */
+export async function getViewer(): Promise<Viewer | null> {
+  const real = await getRealViewer();
+  if (!real || real.role !== "hr") return real;
+  const store = await cookies();
+  const viewAs = store.get(VIEW_AS_COOKIE)?.value;
+  if (!viewAs) return real;
+  const db = await loadDb();
+  const person = db.people.find((p) => p.id === viewAs && p.kind === "employee");
+  if (!person) return real;
+  let role: ViewerRole = person.userRole === "hr" ? "employee" : (person.userRole ?? "employee");
+  if (!person.userRole) {
+    const manages = db.people.some(
+      (p) => p.managerId === person.id || p.dottedManagerId === person.id
+    );
+    if (manages) role = "manager";
+  }
+  return {
+    role,
+    email: person.email,
+    name: person.name,
+    personId: person.id,
+    viewingAs: true,
+    realName: real.name ?? real.email ?? "Admin",
+  };
+}
+
+/** Start impersonating an employee (caller must already be verified as HR). */
+export async function setViewAs(personId: string): Promise<void> {
+  const store = await cookies();
+  store.set(VIEW_AS_COOKIE, personId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 4, // auto-expires after 4h, in case exit is forgotten
+    path: "/",
+  });
+}
+
+export async function clearViewAs(): Promise<void> {
+  const store = await cookies();
+  store.delete(VIEW_AS_COOKIE);
 }
 
 /** Back-compat guard used by write APIs: true only for the hr role. */

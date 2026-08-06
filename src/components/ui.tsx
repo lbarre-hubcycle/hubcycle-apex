@@ -36,7 +36,14 @@ export function LangToggle() {
   );
 }
 
-export type ShellViewer = { role: "hr" | "manager" | "recruiter" | "employee"; name: string; legacy: boolean };
+export type ShellViewer = {
+  role: "hr" | "manager" | "recruiter" | "employee";
+  name: string;
+  legacy: boolean;
+  /** Set when an HR admin is impersonating this person ("view as"). */
+  viewingAs?: boolean;
+  realName?: string;
+};
 
 type Role = ShellViewer["role"];
 const ALL: Role[] = ["hr", "manager", "recruiter", "employee"];
@@ -99,7 +106,8 @@ export function AdminShell({
   demoMode?: boolean;
   viewer: ShellViewer;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const fr = lang === "fr";
   const pathname = usePathname();
   const router = useRouter();
   const groups = GROUPS.map((g) => ({
@@ -114,6 +122,11 @@ export function AdminShell({
     await signOut({ redirect: false }).catch(() => {});
     router.push("/");
     router.refresh();
+  }
+
+  async function exitViewAs() {
+    await fetch("/api/admin/view-as", { method: "DELETE" });
+    window.location.href = "/admin/settings";
   }
 
   return (
@@ -162,6 +175,22 @@ export function AdminShell({
                 </Link>
               ))}
             </div>
+          </div>
+        ) : null}
+        {viewer.viewingAs ? (
+          <div className="flex items-center justify-center gap-3 bg-lavender/40 px-5 py-2 text-xs font-medium text-deep">
+            <span>
+              👁{" "}
+              {fr
+                ? `Vous voyez Apex comme ${viewer.name} — mode test`
+                : `You are viewing Apex as ${viewer.name} — test mode`}
+            </span>
+            <button
+              onClick={exitViewAs}
+              className="rounded-full bg-deep px-3 py-1 font-semibold text-white hover:bg-deep/80"
+            >
+              {fr ? `Revenir à mon compte (${viewer.realName})` : `Back to my account (${viewer.realName})`}
+            </button>
           </div>
         ) : null}
         {demoMode ? (

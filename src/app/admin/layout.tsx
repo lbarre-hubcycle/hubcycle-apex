@@ -12,7 +12,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <AdminShell
       demoMode={storageMode() === "memory"}
-      viewer={{ role: viewer.role, name: viewer.name ?? viewer.email ?? "", legacy: viewer.legacy ?? false }}
+      viewer={{
+        role: viewer.role,
+        name: viewer.name ?? viewer.email ?? "",
+        legacy: viewer.legacy ?? false,
+        viewingAs: viewer.viewingAs,
+        realName: viewer.realName,
+      }}
     >
       {children}
     </AdminShell>

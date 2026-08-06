@@ -70,6 +70,16 @@ export default function SettingsPage() {
     await refresh();
   }
 
+  /** "View as": test the platform exactly as this employee sees it. */
+  async function viewAs(id: string) {
+    const res = await fetch("/api/admin/view-as", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ personId: id }),
+    });
+    if (res.ok) window.location.href = "/admin/me";
+  }
+
   return (
     <div>
       <SectionTitle title={t("settings.title")} sub={t("settings.sub")} />
@@ -136,6 +146,7 @@ export default function SettingsPage() {
               <th className="px-5 py-3">{t("settings.teamFunctional")}</th>
               <th className="px-5 py-3">{t("settings.managerDirect")}</th>
               <th className="px-5 py-3">{t("settings.managerDotted")}</th>
+              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -231,6 +242,17 @@ export default function SettingsPage() {
                           </option>
                         ))}
                     </select>
+                  </td>
+                  <td className="px-5 py-3">
+                    {p.kind === "employee" ? (
+                      <button
+                        onClick={() => void viewAs(p.id)}
+                        title={t("settings.viewAs")}
+                        className="rounded-full border border-deep/15 px-2.5 py-1 text-xs font-semibold text-deep/70 hover:bg-cloud hover:text-deep"
+                      >
+                        👁 {t("settings.viewAs")}
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               );

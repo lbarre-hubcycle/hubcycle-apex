@@ -39,6 +39,7 @@ export async function GET() {
       name: viewer.name,
       personId: viewer.personId,
       legacy: viewer.legacy ?? false,
+      viewingAs: viewer.viewingAs ?? false,
     },
   });
 }
