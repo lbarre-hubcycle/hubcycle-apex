@@ -24,6 +24,7 @@ const DICT = {
   "nav.goals": { en: "Objectives", fr: "Objectifs" },
   "nav.oneOnOne": { en: "1-2-1", fr: "1-2-1" },
   "nav.okrs": { en: "OKRs", fr: "OKRs" },
+  "nav.review": { en: "Review", fr: "Revue" },
   "settings.viewAs": { en: "View as", fr: "Voir comme" },
   "nav.referential": { en: "Referential", fr: "R\u00e9f\u00e9rentiel" },
   "ref.title": { en: "Competency & KPI referential", fr: "R\u00e9f\u00e9rentiel comp\u00e9tences et KPI" },

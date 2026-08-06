@@ -52,7 +52,7 @@ const ALL: Role[] = ["hr", "manager", "recruiter", "employee"];
 const GROUPS: {
   id: string;
   key: "nav.cockpit" | "nav.crew" | "nav.company" | "nav.recruit" | "nav.settings";
-  items: { href: string; key: "nav.me" | "nav.goals" | "nav.feedback" | "nav.oneOnOne" | "nav.okrs" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.compare" | "nav.settings"; roles: Role[] }[];
+  items: { href: string; key: "nav.me" | "nav.goals" | "nav.feedback" | "nav.oneOnOne" | "nav.review" | "nav.okrs" | "nav.dynamics" | "nav.coach" | "nav.growth" | "nav.insights" | "nav.referential" | "nav.methodology" | "nav.recruit" | "nav.compare" | "nav.settings"; roles: Role[] }[];
 }[] = [
   {
     id: "cockpit",
@@ -62,6 +62,7 @@ const GROUPS: {
       { href: "/admin/goals", key: "nav.goals", roles: ["hr", "manager", "employee"] },
       { href: "/admin/feedback", key: "nav.feedback", roles: ["hr", "manager", "employee"] },
       { href: "/admin/one-on-one", key: "nav.oneOnOne", roles: ["hr", "manager", "employee"] },
+      { href: "/admin/review", key: "nav.review", roles: ["hr", "manager", "employee"] },
     ],
   },
   {

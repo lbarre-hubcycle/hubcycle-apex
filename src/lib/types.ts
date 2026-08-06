@@ -250,6 +250,40 @@ export interface OneOnOne {
   createdAt: string;
 }
 
+/** Performance reviews. Ratings are 1–4 vs the role's expectations. */
+export interface ReviewRating {
+  self?: number;
+  manager?: number;
+  selfNote?: string;
+  managerNote?: string;
+}
+
+export type ReviewStatus = "self" | "manager" | "shared" | "done";
+
+export interface PerformanceReview {
+  id: string;
+  /** Cycle id, e.g. "2026-S2". */
+  cycle: string;
+  reviewerId: string;
+  reviewerName: string;
+  /**
+   * self: employee filling their self-assessment.
+   * manager: self submitted, reviewer filling (manager view hidden from employee).
+   * shared: manager assessment visible to the employee.
+   * done: acknowledged by the employee.
+   */
+  status: ReviewStatus;
+  /** Competency code → rating (the role's B/C + the A1-A6 core). */
+  competencies: Record<string, ReviewRating>;
+  /** Manifesto value id → rating. */
+  values: Record<string, ReviewRating>;
+  objectivesComment?: { self?: string; manager?: string };
+  summary?: { self?: string; manager?: string; overall?: number };
+  createdAt: string;
+  sharedAt?: string;
+  doneAt?: string;
+}
+
 export type PersonKind = "candidate" | "employee";
 
 /** Platform access role, assigned in the Admin panel (SSO users). */
@@ -283,6 +317,8 @@ export interface Person {
   goals?: Goal[];
   /** 1-2-1 meetings (employees only). Filtered server-side to participants. */
   oneOnOnes?: OneOnOne[];
+  /** Performance reviews (employees only). Manager fields hidden until shared. */
+  reviews?: PerformanceReview[];
 }
 
 export interface Team {

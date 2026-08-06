@@ -9,6 +9,7 @@ import type {
   Goal,
   Lang,
   OneOnOne,
+  PerformanceReview,
   Person,
   PersonKind,
   Results,
@@ -74,6 +75,7 @@ function personFromRow(row: PersonRow): Person {
     feedback: row.feedback === null ? undefined : (row.feedback as unknown as FeedbackItem[]),
     goals: row.goals === null ? undefined : (row.goals as unknown as Goal[]),
     oneOnOnes: row.oneOnOnes === null ? undefined : (row.oneOnOnes as unknown as OneOnOne[]),
+    reviews: row.reviews === null ? undefined : (row.reviews as unknown as PerformanceReview[]),
   };
 }
 
@@ -101,6 +103,8 @@ export function personToRow(p: Person) {
     goals: p.goals === undefined ? Prisma.DbNull : (p.goals as unknown as Prisma.InputJsonValue),
     oneOnOnes:
       p.oneOnOnes === undefined ? Prisma.DbNull : (p.oneOnOnes as unknown as Prisma.InputJsonValue),
+    reviews:
+      p.reviews === undefined ? Prisma.DbNull : (p.reviews as unknown as Prisma.InputJsonValue),
   };
 }
 
@@ -108,20 +112,42 @@ function teamFromRow(row: TeamRow): Team {
   return { id: row.id, name: row.name };
 }
 
+/** Bring the database up to the code's schema (idempotent statements). */
+async function healSchema(): Promise<void> {
+  const prisma = getPrisma();
+  const { SCHEMA_STATEMENTS } = await import("./db-schema");
+  for (const sql of SCHEMA_STATEMENTS) {
+    await prisma.$executeRawUnsafe(sql);
+  }
+}
+
+/** Run an operation; on failure, heal the schema and retry once. */
+async function withSchemaHeal<T>(op: () => Promise<T>): Promise<T> {
+  try {
+    return await op();
+  } catch (err) {
+    console.error("Postgres op failed — healing schema and retrying:", (err as Error)?.message);
+    await healSchema();
+    return op();
+  }
+}
+
 async function loadFromPostgres(): Promise<Db> {
   const prisma = getPrisma();
-  const [people, teams] = await Promise.all([
-    // invitedAt is ISO-8601, so lexicographic order == chronological order,
-    // matching the insertion order the JSON-document backends preserved.
-    prisma.person.findMany({ orderBy: { invitedAt: "asc" } }),
-    prisma.team.findMany({ orderBy: { name: "asc" } }),
-  ]);
-  // AppDoc may not exist until /api/admin/migrate has run — tolerate that.
-  const okrs = await prisma.appDoc
-    .findUnique({ where: { id: "okrs" } })
-    .then((row) => (row ? (row.data as unknown as Db["okrs"]) : undefined))
-    .catch(() => undefined);
-  return { people: people.map(personFromRow), teams: teams.map(teamFromRow), okrs };
+  return withSchemaHeal(async () => {
+    const [people, teams, okrsRow] = await Promise.all([
+      // invitedAt is ISO-8601, so lexicographic order == chronological order,
+      // matching the insertion order the JSON-document backends preserved.
+      prisma.person.findMany({ orderBy: { invitedAt: "asc" } }),
+      prisma.team.findMany({ orderBy: { name: "asc" } }),
+      prisma.appDoc.findUnique({ where: { id: "okrs" } }),
+    ]);
+    return {
+      people: people.map(personFromRow),
+      teams: teams.map(teamFromRow),
+      okrs: okrsRow ? (okrsRow.data as unknown as Db["okrs"]) : undefined,
+    };
+  });
 }
 
 async function saveToPostgres(db: Db): Promise<void> {
@@ -129,33 +155,26 @@ async function saveToPostgres(db: Db): Promise<void> {
   const personIds = db.people.map((p) => p.id);
   const teamIds = db.teams.map((t) => t.id);
   // Full sync in one transaction: the app mutates a whole Db snapshot, so we
-  // upsert every record and delete the ones no longer present.
-  await prisma.$transaction([
-    ...db.people.map((p) => {
-      const row = personToRow(p);
-      return prisma.person.upsert({ where: { id: p.id }, create: row, update: row });
-    }),
-    prisma.person.deleteMany({ where: { id: { notIn: personIds } } }),
-    ...db.teams.map((t) =>
-      prisma.team.upsert({ where: { id: t.id }, create: t, update: { name: t.name } })
-    ),
-    prisma.team.deleteMany({ where: { id: { notIn: teamIds } } }),
-  ]);
-  // Outside the transaction. Self-healing: if the AppDoc table does not
-  // exist yet (deploy before migration), create it and retry — and if it
-  // still fails, throw so callers never report a phantom success.
+  // upsert every record and delete the ones no longer present. Schema-healing
+  // retry covers deploys that add columns before the ALTERs have run.
+  await withSchemaHeal(() =>
+    prisma.$transaction([
+      ...db.people.map((p) => {
+        const row = personToRow(p);
+        return prisma.person.upsert({ where: { id: p.id }, create: row, update: row });
+      }),
+      prisma.person.deleteMany({ where: { id: { notIn: personIds } } }),
+      ...db.teams.map((t) =>
+        prisma.team.upsert({ where: { id: t.id }, create: t, update: { name: t.name } })
+      ),
+      prisma.team.deleteMany({ where: { id: { notIn: teamIds } } }),
+    ])
+  );
   if (db.okrs !== undefined) {
     const data = db.okrs as unknown as Prisma.InputJsonValue;
-    const upsert = () =>
-      prisma.appDoc.upsert({ where: { id: "okrs" }, create: { id: "okrs", data }, update: { data } });
-    try {
-      await upsert();
-    } catch {
-      await prisma.$executeRawUnsafe(
-        'CREATE TABLE IF NOT EXISTS "AppDoc" ("id" TEXT NOT NULL, "data" JSONB NOT NULL, CONSTRAINT "AppDoc_pkey" PRIMARY KEY ("id"))'
-      );
-      await upsert();
-    }
+    await withSchemaHeal(() =>
+      prisma.appDoc.upsert({ where: { id: "okrs" }, create: { id: "okrs", data }, update: { data } })
+    );
   }
 }
 

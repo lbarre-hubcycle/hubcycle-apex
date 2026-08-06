@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getViewer, visiblePeople } from "@/lib/auth";
 import { feedbackWall, sanitizeFeedback } from "@/lib/feedback";
 import { sanitizeOneOnOnes } from "@/lib/one-on-ones";
+import { sanitizeReviews } from "@/lib/reviews";
 import { loadDb, storageMode } from "@/lib/storage";
 
 /**
@@ -16,7 +17,7 @@ export async function GET() {
   if (!viewer) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const db = await loadDb();
   const people = visiblePeople(db, viewer).map((p) =>
-    sanitizeOneOnOnes(sanitizeFeedback(p, viewer), viewer)
+    sanitizeReviews(sanitizeOneOnOnes(sanitizeFeedback(p, viewer), viewer), viewer)
   );
   const teamIds = new Set(
     viewer.role === "hr"
