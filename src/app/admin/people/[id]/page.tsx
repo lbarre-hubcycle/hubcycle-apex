@@ -296,16 +296,16 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
         </Link>
         <div className="flex gap-3">
           {person.kind === "candidate" ? (
-            <button onClick={convertToEmployee} className="btn-ghost">
-              {t("recruit.convert")}
-            </button>
+            <>
+              <button onClick={convertToEmployee} className="btn-ghost">
+                {t("recruit.convert")}
+              </button>
+              <Link href={`/admin/people/${person.id}/digest`} className="btn-ghost">
+                {t("report.openDigest")}
+              </Link>
+              <PrintButton label={t("report.downloadPdf")} />
+            </>
           ) : null}
-          <Link href={`/admin/people/${person.id}/digest`} className="btn-ghost">
-            {person.kind === "employee"
-              ? fr ? "Ouvrir la synthèse" : "Open summary"
-              : t("report.openDigest")}
-          </Link>
-          <PrintButton label={t("report.downloadPdf")} />
         </div>
       </div>
 
