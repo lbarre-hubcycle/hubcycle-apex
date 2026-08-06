@@ -224,6 +224,14 @@ export default function OneOnOnePage() {
                                 todo.done ? "text-ink/40 line-through" : "text-ink/85"
                               }`}
                             >
+                              {todo.goalId ? (
+                                <span
+                                  className="mr-1.5"
+                                  title={fr ? "Engagement d'un objectif" : "Objective commitment"}
+                                >
+                                  🎯
+                                </span>
+                              ) : null}
                               {todo.text}
                             </span>
                             {todo.assigneeId ? (

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getViewer, type Viewer } from "@/lib/auth";
 import { loadDb, newId, saveDb } from "@/lib/storage";
 import { FRAMEWORK_MAP } from "@/data/competency-framework";
-import type { Goal, GoalKind, GoalStatus, Person } from "@/lib/types";
+import type { CommitmentCadence, Goal, GoalKind, GoalStatus, Person } from "@/lib/types";
 
 const KINDS: GoalKind[] = ["performance", "development"];
 const STATUSES: GoalStatus[] = ["on-track", "at-risk", "done", "dropped"];
+const CADENCES: CommitmentCadence[] = ["weekly", "monthly"];
 
 /** Goals are managed by the person themselves, their managers, or HR. */
 function canManage(viewer: Viewer, person: Person): boolean {
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
     personId?: string;
     title?: string;
     description?: string;
+    commitment?: string;
+    cadence?: CommitmentCadence;
     kind?: GoalKind;
     competency?: string;
     kpi?: string;
@@ -38,6 +41,13 @@ export async function POST(req: Request) {
   if (!body.personId || !title || title.length > 200 || !body.kind || !KINDS.includes(body.kind)) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
+  // The "how I will get there" commitment is mandatory, with a cadence.
+  const commitment = body.commitment?.trim();
+  if (!commitment || commitment.length > 500) {
+    return NextResponse.json({ error: "commitment" }, { status: 400 });
+  }
+  const cadence: CommitmentCadence =
+    body.cadence && CADENCES.includes(body.cadence) ? body.cadence : "weekly";
 
   const db = await loadDb();
   const person = db.people.find((p) => p.id === body.personId && p.kind === "employee");
@@ -48,6 +58,8 @@ export async function POST(req: Request) {
     id: newId(),
     title,
     description: body.description?.trim().slice(0, 2000) || undefined,
+    commitment,
+    cadence,
     kind: body.kind,
     competency:
       body.kind === "development" && body.competency && FRAMEWORK_MAP[body.competency]
@@ -78,6 +90,8 @@ export async function PATCH(req: Request) {
     checkin?: { status?: GoalStatus; progress?: number; note?: string };
     title?: string;
     description?: string;
+    commitment?: string;
+    cadence?: CommitmentCadence;
     kpi?: string;
     competency?: string;
     targetDate?: string;
@@ -112,6 +126,8 @@ export async function PATCH(req: Request) {
     ];
   }
   if (body.title?.trim()) goal.title = body.title.trim().slice(0, 200);
+  if (body.commitment?.trim()) goal.commitment = body.commitment.trim().slice(0, 500);
+  if (body.cadence && CADENCES.includes(body.cadence)) goal.cadence = body.cadence;
   if ("description" in body) goal.description = body.description?.trim().slice(0, 2000) || undefined;
   if ("kpi" in body && goal.kind === "performance") goal.kpi = body.kpi?.trim() || undefined;
   if ("competency" in body && goal.kind === "development") {

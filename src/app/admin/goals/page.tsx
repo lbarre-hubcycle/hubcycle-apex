@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAdminState } from "@/lib/useAdminState";
 import { SectionTitle } from "@/components/ui";
 import { GoalCard } from "@/components/goals";
-import type { GoalKind, GoalStatus, Person } from "@/lib/types";
+import type { CommitmentCadence, GoalKind, GoalStatus, Person } from "@/lib/types";
 
 /**
  * Personal objectives & commitments (Cockpit). Performance goals commit to
@@ -43,7 +43,8 @@ export default function GoalsPage() {
   const [showForm, setShowForm] = useState(false);
   const [kind, setKind] = useState<GoalKind>("performance");
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [commitment, setCommitment] = useState("");
+  const [cadence, setCadence] = useState<CommitmentCadence>("weekly");
   const [kpi, setKpi] = useState("");
   const [competency, setCompetency] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -73,17 +74,17 @@ export default function GoalsPage() {
       }));
   }, [person, exp, l]);
 
-  function prefill(nextKind: GoalKind, nextTitle: string, opts?: { kpi?: string; competency?: string; description?: string }) {
+  function prefill(nextKind: GoalKind, nextTitle: string, opts?: { kpi?: string; competency?: string; commitment?: string }) {
     setShowForm(true);
     setKind(nextKind);
     setTitle(nextTitle);
     setKpi(opts?.kpi ?? "");
     setCompetency(opts?.competency ?? "");
-    setDescription(opts?.description ?? "");
+    setCommitment(opts?.commitment ?? "");
   }
 
   async function create() {
-    if (!person || !title.trim() || saving) return;
+    if (!person || !title.trim() || !commitment.trim() || saving) return;
     setSaving(true);
     const res = await fetch("/api/goals", {
       method: "POST",
@@ -92,7 +93,8 @@ export default function GoalsPage() {
         personId: person.id,
         kind,
         title,
-        description: description || undefined,
+        commitment,
+        cadence,
         kpi: kind === "performance" ? kpi || undefined : undefined,
         competency: kind === "development" ? competency || undefined : undefined,
         targetDate: targetDate || undefined,
@@ -101,7 +103,8 @@ export default function GoalsPage() {
     setSaving(false);
     if (res.ok) {
       setTitle("");
-      setDescription("");
+      setCommitment("");
+      setCadence("weekly");
       setKpi("");
       setCompetency("");
       setTargetDate("");
@@ -221,14 +224,42 @@ export default function GoalsPage() {
                     }
                     className="mt-3 w-full rounded-xl border border-deep/15 bg-white px-3 py-2.5 text-sm font-medium"
                   />
+                  <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-deep/60">
+                    {fr ? "Mon engagement — comment j'y arrive" : "My commitment — how I get there"}{" "}
+                    <span className="text-coral">*</span>
+                  </label>
                   <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={commitment}
+                    onChange={(e) => setCommitment(e.target.value)}
                     rows={2}
-                    maxLength={2000}
-                    placeholder={fr ? "Comment on s'y prend (optionnel)…" : "How we get there (optional)…"}
-                    className="mt-2 w-full rounded-xl border border-deep/15 bg-white px-3 py-2.5 text-xs"
+                    maxLength={500}
+                    placeholder={
+                      fr
+                        ? "Un engagement concret et récurrent. Ex. : 2 h de prospection bloquées chaque mardi matin."
+                        : "A concrete, recurring commitment. E.g.: 2h of prospecting blocked every Tuesday morning."
+                    }
+                    className="mt-1.5 w-full rounded-xl border border-deep/15 bg-white px-3 py-2.5 text-xs"
                   />
+                  <div className="mt-2 flex gap-1.5">
+                    {(["weekly", "monthly"] as const).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setCadence(c)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium ${
+                          cadence === c
+                            ? "bg-deep text-white"
+                            : "border border-deep/15 text-deep/70 hover:bg-cloud"
+                        }`}
+                      >
+                        {c === "weekly" ? (fr ? "Hebdomadaire" : "Weekly") : fr ? "Mensuel" : "Monthly"}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-ink/45">
+                    {fr
+                      ? "L'engagement est repris automatiquement comme action à chaque nouveau 1-2-1."
+                      : "The commitment is automatically added as an action to every new 1-2-1."}
+                  </p>
 
                   {kind === "performance" ? (
                     <>
@@ -293,7 +324,7 @@ export default function GoalsPage() {
                   <div className="mt-4">
                     <button
                       onClick={() => void create()}
-                      disabled={!title.trim() || saving}
+                      disabled={!title.trim() || !commitment.trim() || saving}
                       className="btn-coral disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {saving ? "…" : fr ? "Créer l'objectif" : "Create objective"}
@@ -379,7 +410,7 @@ export default function GoalsPage() {
                       onClick={() =>
                         prefill("development", fr ? `Progresser sur ${s.name}` : `Grow on ${s.name}`, {
                           competency: s.code,
-                          description: s.lever,
+                          commitment: s.lever,
                         })
                       }
                       className="block w-full rounded-xl border border-lavender/40 bg-lavender/5 px-3 py-2 text-left text-xs hover:bg-lavender/15"

@@ -188,10 +188,18 @@ export interface GoalCheckin {
   note?: string;
 }
 
+export type CommitmentCadence = "weekly" | "monthly";
+
 export interface Goal {
   id: string;
   title: string;
   description?: string;
+  /** "How I will get there" — a concrete commitment, required at creation. */
+  commitment?: string;
+  /** The commitment's rhythm: reviewed weekly or monthly (in 1-2-1s). */
+  cadence?: CommitmentCadence;
+  /** Future: the OKR this objective contributes to (set once OKRs exist). */
+  okrId?: string;
   kind: GoalKind;
   /** Framework competency code, for development goals. */
   competency?: string;
@@ -213,6 +221,8 @@ export interface TodoItem {
   done: boolean;
   /** Person id of who owns the action (one of the two participants). */
   assigneeId?: string;
+  /** Set when this action is an objective's commitment, seeded automatically. */
+  goalId?: string;
   createdAt: string;
 }
 

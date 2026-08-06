@@ -79,7 +79,17 @@ export function GoalCard({
       </div>
 
       <div className="mt-2 text-sm font-semibold text-ink">{goal.title}</div>
-      {goal.description ? (
+      {goal.commitment ? (
+        <p className="mt-1.5 rounded-xl bg-cloud/50 px-3 py-2 text-xs leading-relaxed text-ink/75">
+          <span className="font-semibold text-deep">
+            🤝{" "}
+            {goal.cadence === "monthly"
+              ? fr ? "Engagement mensuel : " : "Monthly commitment: "
+              : fr ? "Engagement hebdo : " : "Weekly commitment: "}
+          </span>
+          {goal.commitment}
+        </p>
+      ) : goal.description ? (
         <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-ink/60">
           {goal.description}
         </p>
