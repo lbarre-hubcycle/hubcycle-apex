@@ -146,7 +146,6 @@ export default function SettingsPage() {
               <th className="px-5 py-3">{t("settings.teamFunctional")}</th>
               <th className="px-5 py-3">{t("settings.managerDirect")}</th>
               <th className="px-5 py-3">{t("settings.managerDotted")}</th>
-              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -156,7 +155,18 @@ export default function SettingsPage() {
               return (
                 <tr key={p.id} className="border-b border-cloud/60">
                   <td className="px-5 py-3 font-medium text-ink">
-                    <NameCell name={p.name} onSave={(name) => patchPerson(p.id, { name })} />
+                    <span className="flex items-center gap-1.5">
+                      <NameCell name={p.name} onSave={(name) => patchPerson(p.id, { name })} />
+                      {p.kind === "employee" ? (
+                        <button
+                          onClick={() => void viewAs(p.id)}
+                          title={t("settings.viewAs")}
+                          className="shrink-0 rounded-full px-1.5 py-0.5 text-sm opacity-50 hover:bg-cloud hover:opacity-100"
+                        >
+                          👁
+                        </button>
+                      ) : null}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     <NameCell name={p.email ?? ""} onSave={(email) => patchPerson(p.id, { email })} />
@@ -242,17 +252,6 @@ export default function SettingsPage() {
                           </option>
                         ))}
                     </select>
-                  </td>
-                  <td className="px-5 py-3">
-                    {p.kind === "employee" ? (
-                      <button
-                        onClick={() => void viewAs(p.id)}
-                        title={t("settings.viewAs")}
-                        className="rounded-full border border-deep/15 px-2.5 py-1 text-xs font-semibold text-deep/70 hover:bg-cloud hover:text-deep"
-                      >
-                        👁 {t("settings.viewAs")}
-                      </button>
-                    ) : null}
                   </td>
                 </tr>
               );
