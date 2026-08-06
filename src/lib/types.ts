@@ -290,6 +290,12 @@ export interface Team {
   name: string;
 }
 
+/**
+ * OKR text fields: seeded content is bilingual (L10n); user-authored
+ * content is a plain string shown as-is in both languages.
+ */
+export type OkrText = string | L10n;
+
 /** OKRs — company objectives per period, each key result owned by a department. */
 export interface KrCheckIn {
   date: string;
@@ -301,7 +307,7 @@ export interface KrCheckIn {
 export interface KeyResult {
   id: string;
   /** Measurable outcome ("Billing YTD ≥ 10,5 M€"), never a task list. */
-  title: string;
+  title: OkrText;
   /** Department carrying it (free text: Supply, Finance, Sales…). */
   team?: string;
   /** Accountable person (free text name). */
@@ -309,11 +315,13 @@ export interface KeyResult {
   /** Budget line this KR moves (see src/data/budget.ts). */
   budgetTag?: string;
   /** The SWOT finding that justified this KR. */
-  swot?: string;
+  swot?: OkrText;
   start: number;
   target: number;
   current: number;
   unit?: string; // "M€", "%", "#", "j"…
+  /** Closing verdict, set at quarter end: achieved, missed, or postponed. */
+  outcome?: "achieved" | "missed" | "postponed";
   checkIns: KrCheckIn[];
 }
 
@@ -322,9 +330,9 @@ export interface Okr {
   /** "2026-Q3", "2026-Q4", "2026" (annual). */
   period: string;
   /** Qualitative, memorable objective. */
-  objective: string;
+  objective: OkrText;
   /** Why now — SWOT context. */
-  description?: string;
+  description?: OkrText;
   keyResults: KeyResult[];
   createdAt: string;
 }

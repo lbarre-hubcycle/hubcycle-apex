@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAdminState } from "@/lib/useAdminState";
 import { SectionTitle } from "@/components/ui";
 import { GoalCard } from "@/components/goals";
-import type { CommitmentCadence, GoalKind, GoalStatus, Person } from "@/lib/types";
+import type { CommitmentCadence, GoalKind, GoalStatus, OkrText, Person } from "@/lib/types";
 
 /**
  * Personal objectives & commitments (Cockpit). Performance goals commit to
@@ -52,7 +52,9 @@ export default function GoalsPage() {
   const [okrId, setOkrId] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Current quarter's key results, own team's first — candidates for alignment.
+  const tx = (v: OkrText | undefined) => (v === undefined ? "" : typeof v === "string" ? v : l(v));
+
+  // Current quarter's key results — candidates for alignment.
   const okrKrs = useMemo(() => {
     const periods = [...new Set(okrs.map((o) => o.period))].sort();
     const current = periods[periods.length - 1];
@@ -62,7 +64,7 @@ export default function GoalsPage() {
       .flatMap((o) => o.keyResults.map((k) => ({ ...k, objective: o.objective })));
   }, [okrs]);
   const krLabel = useMemo(() => {
-    const map = new Map<string, string>();
+    const map = new Map<string, OkrText>();
     for (const o of okrs) for (const k of o.keyResults) map.set(k.id, k.title);
     for (const o of okrs) map.set(o.id, o.objective);
     return map;
@@ -269,7 +271,7 @@ export default function GoalsPage() {
                   {okrId && krLabel.get(okrId) ? (
                     <div className="mt-2 flex items-center gap-2 text-[11px]">
                       <span className="rounded-full bg-deep/10 px-2.5 py-1 font-semibold text-deep">
-                        🧭 {fr ? "Aligné sur l'OKR :" : "Aligned to OKR:"} {krLabel.get(okrId)}
+                        🧭 {fr ? "Aligné sur l'OKR :" : "Aligned to OKR:"} {tx(krLabel.get(okrId))}
                       </span>
                       <button onClick={() => setOkrId("")} className="text-ink/40 hover:text-coral">
                         ×
@@ -397,7 +399,7 @@ export default function GoalsPage() {
                     <GoalCard
                       key={goal.id}
                       goal={goal}
-                      okrLabel={goal.okrId ? krLabel.get(goal.okrId) : undefined}
+                      okrLabel={goal.okrId ? tx(krLabel.get(goal.okrId)) : undefined}
                       onCheckin={(s, p, n) => checkin(goal.id, s, p, n)}
                       onDelete={() => remove(goal.id)}
                     />
@@ -417,7 +419,7 @@ export default function GoalsPage() {
                     <GoalCard
                       key={goal.id}
                       goal={goal}
-                      okrLabel={goal.okrId ? krLabel.get(goal.okrId) : undefined}
+                      okrLabel={goal.okrId ? tx(krLabel.get(goal.okrId)) : undefined}
                       onDelete={() => remove(goal.id)}
                     />
                   ))}
@@ -443,7 +445,7 @@ export default function GoalsPage() {
                     <button
                       key={k.id}
                       onClick={() =>
-                        prefill("performance", fr ? `Contribuer : ${k.title}` : `Contribute: ${k.title}`, {
+                        prefill("performance", fr ? `Contribuer : ${tx(k.title)}` : `Contribute: ${tx(k.title)}`, {
                           okrId: k.id,
                         })
                       }
@@ -451,9 +453,9 @@ export default function GoalsPage() {
                     >
                       <span className="font-semibold text-deep">
                         ＋ {k.team ? `${k.team} · ` : ""}
-                        {k.title}
+                        {tx(k.title)}
                       </span>
-                      <span className="mt-0.5 block text-ink/45">{k.objective}</span>
+                      <span className="mt-0.5 block text-ink/45">{tx(k.objective)}</span>
                     </button>
                   ))}
                 </div>

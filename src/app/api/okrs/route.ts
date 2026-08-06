@@ -2,7 +2,24 @@ import { NextResponse } from "next/server";
 import { getViewer } from "@/lib/auth";
 import { loadDb, newId, saveDb } from "@/lib/storage";
 import { BUDGET_MAP } from "@/data/budget";
-import type { KeyResult, Okr } from "@/lib/types";
+import type { KeyResult, Okr, OkrText } from "@/lib/types";
+
+/** Seeded content is bilingual; user input is a plain string. */
+function isOkrText(v: unknown): v is OkrText {
+  return (
+    typeof v === "string" ||
+    (typeof v === "object" &&
+      v !== null &&
+      typeof (v as { en?: unknown }).en === "string" &&
+      typeof (v as { fr?: unknown }).fr === "string")
+  );
+}
+
+function cleanText(v: unknown, max: number): OkrText | undefined {
+  if (typeof v === "string") return v.trim().slice(0, max) || undefined;
+  if (isOkrText(v)) return v;
+  return undefined;
+}
 
 /**
  * Company OKRs. HR shapes them (after the quarterly SWOT); HR and managers
@@ -15,7 +32,7 @@ const MAX_OBJECTIVES_PER_PERIOD = 4;
 const MAX_KRS_PER_OBJECTIVE = 5;
 
 function parseKr(input: Record<string, unknown>): Omit<KeyResult, "id" | "checkIns"> | null {
-  const title = typeof input.title === "string" ? input.title.trim().slice(0, 300) : "";
+  const title = cleanText(input.title, 300);
   if (!title) return null;
   const num = (v: unknown, fallback = 0) => (typeof v === "number" && isFinite(v) ? v : fallback);
   return {
@@ -26,7 +43,7 @@ function parseKr(input: Record<string, unknown>): Omit<KeyResult, "id" | "checkI
       typeof input.budgetTag === "string" && BUDGET_MAP[input.budgetTag]
         ? input.budgetTag
         : undefined,
-    swot: typeof input.swot === "string" ? input.swot.trim().slice(0, 500) || undefined : undefined,
+    swot: cleanText(input.swot, 500),
     start: num(input.start),
     target: num(input.target, 100),
     current: num(input.current, num(input.start)),
@@ -74,6 +91,7 @@ export async function PATCH(req: Request) {
     editKr?: { krId: string } & Record<string, unknown>;
     removeKrId?: string;
     checkIn?: { krId: string; value: number; note?: string };
+    setOutcome?: { krId: string; outcome: "achieved" | "missed" | "postponed" | null };
   };
   if (!body.okrId) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
@@ -83,7 +101,10 @@ export async function PATCH(req: Request) {
 
   const isHr = viewer.role === "hr";
   // Managers may only check in; structure changes are HR's.
-  if (!isHr && (body.objective || body.description || body.addKr || body.editKr || body.removeKrId)) {
+  if (
+    !isHr &&
+    (body.objective || body.description || body.addKr || body.editKr || body.removeKrId || body.setOutcome)
+  ) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -107,6 +128,14 @@ export async function PATCH(req: Request) {
   }
   if (isHr && body.removeKrId) {
     okr.keyResults = okr.keyResults.filter((k) => k.id !== body.removeKrId);
+  }
+  if (isHr && body.setOutcome) {
+    const kr = okr.keyResults.find((k) => k.id === body.setOutcome!.krId);
+    const outcome = body.setOutcome.outcome;
+    if (!kr || (outcome !== null && !["achieved", "missed", "postponed"].includes(outcome))) {
+      return NextResponse.json({ error: "invalid-outcome" }, { status: 400 });
+    }
+    kr.outcome = outcome ?? undefined;
   }
   if (body.checkIn) {
     const kr = okr.keyResults.find((k) => k.id === body.checkIn!.krId);

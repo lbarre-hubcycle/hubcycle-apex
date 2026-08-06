@@ -5,7 +5,7 @@ import { BUDGET_LINES, BUDGET_MAP } from "@/data/budget";
 import { useI18n } from "@/lib/i18n";
 import { useAdminState } from "@/lib/useAdminState";
 import { SectionTitle } from "@/components/ui";
-import type { KeyResult, Okr } from "@/lib/types";
+import type { KeyResult, Okr, OkrText } from "@/lib/types";
 
 /**
  * Company OKRs — one page per quarter, few objectives, measurable key
@@ -24,21 +24,79 @@ function krProgress(kr: KeyResult): number {
 
 const fmt = (n: number) => (Number.isInteger(n) ? n.toString() : n.toFixed(1).replace(".", ","));
 
+/** Fraction of the period already elapsed (0 before it starts, 1 after it ends). */
+function elapsedFraction(period: string, now = new Date()): number {
+  const year = Number(period.slice(0, 4));
+  const q = period.includes("-Q") ? Number(period.slice(-1)) : null;
+  const start = q ? new Date(year, (q - 1) * 3, 1) : new Date(year, 0, 1);
+  const end = q ? new Date(year, q * 3, 1) : new Date(year + 1, 0, 1);
+  return Math.min(1, Math.max(0, (now.getTime() - start.getTime()) / (end.getTime() - start.getTime())));
+}
+
+export type KrStatus =
+  | "done"
+  | "missed"
+  | "postponed"
+  | "on-track"
+  | "off-track"
+  | "delayed"
+  | "not-started";
+
+/**
+ * Status: an explicit closing outcome wins; otherwise progress compared to
+ * how far into the period we are (a finished period with <100% = missed).
+ */
+function krStatus(kr: KeyResult, period: string): KrStatus {
+  if (kr.outcome === "achieved") return "done";
+  if (kr.outcome === "missed") return "missed";
+  if (kr.outcome === "postponed") return "postponed";
+  const p = krProgress(kr);
+  if (p >= 100) return "done";
+  const expected = elapsedFraction(period) * 100;
+  if (expected >= 100) return "missed";
+  if (expected === 0) return "not-started";
+  const ratio = p / expected;
+  if (ratio >= 0.85) return "on-track";
+  if (ratio >= 0.5) return "off-track";
+  return "delayed";
+}
+
+const STATUS_STYLE: Record<KrStatus, { fr: string; en: string; chip: string; dot: string }> = {
+  done: { fr: "Atteint", en: "Achieved", chip: "bg-deep text-white", dot: "bg-deep" },
+  missed: { fr: "Manqué", en: "Missed", chip: "bg-coral text-white", dot: "bg-coral" },
+  postponed: { fr: "Reporté", en: "Postponed", chip: "bg-lavender/60 text-deep", dot: "bg-lavender" },
+  "on-track": { fr: "En bonne voie", en: "On track", chip: "bg-sky/40 text-deep", dot: "bg-sky" },
+  "off-track": { fr: "Off track", en: "Off track", chip: "bg-coral/15 text-coral", dot: "bg-coral/60" },
+  delayed: { fr: "En retard", en: "Delayed", chip: "bg-coral/40 text-white", dot: "bg-coral/70" },
+  "not-started": { fr: "À venir", en: "Not started", chip: "bg-cloud text-ink/50", dot: "bg-ink/20" },
+};
+
+const YEAR_VIEW = "2026";
+
 export default function OkrsPage() {
   const { l, lang } = useI18n();
   const fr = lang === "fr";
   const { db, viewer, okrs, refresh } = useAdminState();
   const isHr = viewer?.role === "hr";
   const canCheckIn = viewer?.role === "hr" || viewer?.role === "manager";
+  const tx = (v: OkrText | undefined) => (v === undefined ? "" : typeof v === "string" ? v : l(v));
 
   const periods = useMemo(() => {
-    const set = new Set(okrs.map((o) => o.period));
+    const set = new Set(okrs.map((o) => o.period).filter((p) => p.includes("-Q")));
     set.add("2026-Q3");
     set.add("2026-Q4");
     return [...set].sort();
   }, [okrs]);
   const [period, setPeriod] = useState("2026-Q3");
+  const yearView = period === YEAR_VIEW;
   const list = okrs.filter((o) => o.period === period);
+  const yearOkrs = useMemo(
+    () =>
+      okrs
+        .filter((o) => o.period.startsWith(YEAR_VIEW))
+        .sort((a, b) => a.period.localeCompare(b.period)),
+    [okrs]
+  );
 
   // Individual objectives aligned to a KR (viewer-scoped people).
   const alignedCount = useMemo(() => {
@@ -80,6 +138,9 @@ export default function OkrsPage() {
     if (res.ok) await refresh();
   }
 
+  const SEED_PERIODS = ["2026", "2026-Q1", "2026-Q2", "2026-Q3"];
+  const seedMissing = SEED_PERIODS.filter((p) => !okrs.some((o) => o.period === p));
+
   return (
     <div>
       <SectionTitle
@@ -103,7 +164,15 @@ export default function OkrsPage() {
             {p.replace("-", " ")}
           </button>
         ))}
-        {list.length ? (
+        <button
+          onClick={() => setPeriod(YEAR_VIEW)}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            yearView ? "bg-deep text-white" : "border border-deep/20 text-deep hover:bg-cloud"
+          }`}
+        >
+          {fr ? "2026 · Année" : "2026 · Year"}
+        </button>
+        {!yearView && list.length ? (
           <span className="ml-auto rounded-full bg-deep px-4 py-2 text-sm font-bold text-white">
             {fr ? "Avancement" : "Progress"} · {overall}%
           </span>
@@ -130,20 +199,28 @@ export default function OkrsPage() {
         )}
       </div>
 
-      {list.length === 0 ? (
+      {isHr && seedMissing.length ? (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-coral/25 bg-coral/5 px-4 py-3">
+          <span className="text-xs text-ink/70">
+            {fr
+              ? `Proposition 2026 simplifiée disponible (${seedMissing.join(", ")}) — annuel + trimestres, avec les résultats réels Q1-Q2.`
+              : `Simplified 2026 proposal available (${seedMissing.join(", ")}) — annual + quarters, with actual Q1-Q2 results.`}
+          </span>
+          <button onClick={() => void seed()} disabled={busy} className="btn-coral !px-4 !py-2 !text-xs">
+            {busy ? "…" : fr ? "Charger" : "Load"}
+          </button>
+        </div>
+      ) : null}
+
+      {yearView ? (
+        <YearView okrs={yearOkrs} fr={fr} tx={tx} />
+      ) : list.length === 0 ? (
         <div className="card">
           <p className="text-sm text-ink/50">
             {fr ? "Aucun OKR pour cette période." : "No OKRs for this period."}
           </p>
-          {isHr && period === "2026-Q3" ? (
-            <button onClick={() => void seed()} disabled={busy} className="btn-coral mt-4">
-              {busy ? "…" : fr
-                ? "Charger la proposition Q3 2026 simplifiée (4 objectifs · 15 KRs)"
-                : "Load the simplified Q3 2026 proposal (4 objectives · 15 KRs)"}
-            </button>
-          ) : null}
           {isHr ? (
-            <button onClick={() => setShowNew(true)} className="btn-ghost mt-4 ml-2">
+            <button onClick={() => setShowNew(true)} className="btn-ghost mt-4">
               {fr ? "+ Objectif vierge" : "+ Blank objective"}
             </button>
           ) : null}
@@ -161,6 +238,7 @@ export default function OkrsPage() {
               aligned={alignedCount}
               fr={fr}
               l={l}
+              tx={tx}
             />
           ))}
           {isHr && list.length < 4 ? (
@@ -210,6 +288,124 @@ export default function OkrsPage() {
   );
 }
 
+/** Annual follow-up: every quarter side by side, with a status summary. */
+function YearView({
+  okrs,
+  fr,
+  tx,
+}: {
+  okrs: Okr[];
+  fr: boolean;
+  tx: (v: OkrText | undefined) => string;
+}) {
+  // The four retrospective questions: set / achieved / missed / postponed
+  // (everything else is simply "in progress").
+  const bucketOf = (s: KrStatus) =>
+    s === "done" ? "achieved" : s === "missed" ? "missed" : s === "postponed" ? "postponed" : "inProgress";
+  const allKrs = okrs.flatMap((o) => o.keyResults.map((k) => ({ kr: k, period: o.period })));
+  const totals = { set: allKrs.length, achieved: 0, missed: 0, postponed: 0, inProgress: 0 };
+  for (const { kr, period } of allKrs) totals[bucketOf(krStatus(kr, period))]++;
+  const quarters = [...new Set(okrs.map((o) => o.period))].sort();
+  const qLabel = (q: string) =>
+    q.includes("-Q") ? q.replace("-", " ") : `${q} · ${fr ? "Annuel" : "Annual"}`;
+
+  if (!okrs.length) {
+    return (
+      <div className="card text-sm text-ink/50">
+        {fr ? "Aucun OKR 2026 pour l'instant." : "No 2026 OKRs yet."}
+      </div>
+    );
+  }
+
+  const TILES: { key: keyof typeof totals; fr: string; en: string; chip: string }[] = [
+    { key: "set", fr: "Fixés", en: "Set", chip: "bg-deep/10 text-deep" },
+    { key: "achieved", fr: "Atteints", en: "Achieved", chip: STATUS_STYLE.done.chip },
+    { key: "missed", fr: "Manqués", en: "Missed", chip: STATUS_STYLE.missed.chip },
+    { key: "postponed", fr: "Reportés", en: "Postponed", chip: STATUS_STYLE.postponed.chip },
+    { key: "inProgress", fr: "En cours", en: "In progress", chip: STATUS_STYLE["on-track"].chip },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* What did we set / achieve / miss / postpone */}
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {TILES.map((t) => (
+          <div key={t.key} className="card !p-4 text-center">
+            <div className="text-2xl font-bold text-deep">{totals[t.key]}</div>
+            <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${t.chip}`}>
+              {fr ? t.fr : t.en}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {quarters.map((q) => {
+        const qOkrs = okrs.filter((o) => o.period === q);
+        const qKrs = qOkrs.flatMap((o) => o.keyResults);
+        const qProgress = qKrs.length
+          ? Math.round(qKrs.reduce((s, k) => s + krProgress(k), 0) / qKrs.length)
+          : 0;
+        const qTotals = { set: qKrs.length, achieved: 0, missed: 0, postponed: 0, inProgress: 0 };
+        for (const k of qKrs) qTotals[bucketOf(krStatus(k, q))]++;
+        return (
+          <div key={q} className="card">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-heading text-lg text-deep">{qLabel(q)}</h3>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+                <span className="rounded-full bg-deep/10 px-2 py-0.5 text-deep">
+                  {qTotals.set} {fr ? "fixés" : "set"}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 ${STATUS_STYLE.done.chip}`}>
+                  {qTotals.achieved} {fr ? "atteints" : "achieved"}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 ${STATUS_STYLE.missed.chip}`}>
+                  {qTotals.missed} {fr ? "manqués" : "missed"}
+                </span>
+                <span className={`rounded-full px-2 py-0.5 ${STATUS_STYLE.postponed.chip}`}>
+                  {qTotals.postponed} {fr ? "reportés" : "postponed"}
+                </span>
+                {qTotals.inProgress ? (
+                  <span className={`rounded-full px-2 py-0.5 ${STATUS_STYLE["on-track"].chip}`}>
+                    {qTotals.inProgress} {fr ? "en cours" : "in progress"}
+                  </span>
+                ) : null}
+                <span className="rounded-full bg-deep px-2 py-0.5 text-white">{qProgress}%</span>
+              </div>
+            </div>
+            <div className="mt-3 space-y-4">
+              {qOkrs.map((o) => (
+                <div key={o.id}>
+                  <div className="text-sm font-semibold text-ink">{tx(o.objective)}</div>
+                  <div className="mt-1.5 space-y-1">
+                    {o.keyResults.map((k) => {
+                      const s = krStatus(k, o.period);
+                      return (
+                        <div key={k.id} className="flex items-center gap-2 text-xs">
+                          <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_STYLE[s].dot}`} />
+                          <span className="min-w-0 flex-1 truncate text-ink/70" title={tx(k.title)}>
+                            {k.team ? <span className="font-medium text-deep/60">{k.team} · </span> : null}
+                            {tx(k.title)}
+                          </span>
+                          <span className="w-9 shrink-0 text-right font-semibold text-deep">
+                            {krProgress(k)}%
+                          </span>
+                          <span className={`w-24 shrink-0 rounded-full px-2 py-0.5 text-center text-[10px] font-semibold ${STATUS_STYLE[s].chip}`}>
+                            {fr ? STATUS_STYLE[s].fr : STATUS_STYLE[s].en}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ObjectiveCard({
   okr,
   isHr,
@@ -219,6 +415,7 @@ function ObjectiveCard({
   aligned,
   fr,
   l,
+  tx,
 }: {
   okr: Okr;
   isHr: boolean;
@@ -228,6 +425,7 @@ function ObjectiveCard({
   aligned: Map<string, number>;
   fr: boolean;
   l: (s: { en: string; fr: string }) => string;
+  tx: (v: OkrText | undefined) => string;
 }) {
   const [showKrForm, setShowKrForm] = useState(false);
   const [checkinKr, setCheckinKr] = useState<string | null>(null);
@@ -243,8 +441,8 @@ function ObjectiveCard({
     <div className="card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="font-heading text-lg text-deep">{okr.objective}</h3>
-          {okr.description ? <p className="mt-1 text-xs text-ink/55">{okr.description}</p> : null}
+          <h3 className="font-heading text-lg text-deep">{tx(okr.objective)}</h3>
+          {okr.description ? <p className="mt-1 text-xs text-ink/55">{tx(okr.description)}</p> : null}
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-deep/10 px-3 py-1.5 text-sm font-bold text-deep">{progress}%</span>
@@ -297,9 +495,9 @@ function ObjectiveCard({
                   </button>
                 ) : null}
               </div>
-              <div className="mt-1.5 text-sm font-medium text-ink">{k.title}</div>
+              <div className="mt-1.5 text-sm font-medium text-ink">{tx(k.title)}</div>
               {k.swot ? (
-                <div className="mt-1 text-[11px] italic text-ink/45">SWOT : {k.swot}</div>
+                <div className="mt-1 text-[11px] italic text-ink/45">SWOT : {tx(k.swot)}</div>
               ) : null}
               <div className="mt-2 flex items-center gap-3">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-cloud">
@@ -325,6 +523,33 @@ function ObjectiveCard({
                   </button>
                 ) : null}
               </div>
+              {isHr && elapsedFraction(okr.period) >= 1 ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="text-ink/40">{fr ? "Clôture :" : "Closing:"}</span>
+                  {(["achieved", "missed", "postponed"] as const).map((outcome) => (
+                    <button
+                      key={outcome}
+                      onClick={() =>
+                        void api("PATCH", {
+                          okrId: okr.id,
+                          setOutcome: { krId: k.id, outcome: k.outcome === outcome ? null : outcome },
+                        })
+                      }
+                      className={`rounded-full px-2.5 py-1 font-semibold ${
+                        k.outcome === outcome
+                          ? STATUS_STYLE[outcome === "achieved" ? "done" : outcome].chip
+                          : "border border-deep/15 text-deep/60 hover:bg-cloud"
+                      }`}
+                    >
+                      {outcome === "achieved"
+                        ? fr ? "Atteint" : "Achieved"
+                        : outcome === "missed"
+                          ? fr ? "Manqué" : "Missed"
+                          : fr ? "Reporté" : "Postponed"}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               {checkinKr === k.id ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-cloud/40 p-2.5">
                   <input
