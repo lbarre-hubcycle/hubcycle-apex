@@ -153,6 +153,30 @@ export interface Results {
   };
 }
 
+/** Instant feedback (Leapsome-style). */
+export type FeedbackType = "praise" | "constructive";
+
+/**
+ * Who may read a feedback item (the author always can):
+ * - "all": everyone in the company
+ * - "recipient": the employee only
+ * - "recipient-manager": the employee and their manager(s)
+ */
+export type FeedbackVisibility = "all" | "recipient" | "recipient-manager";
+
+export interface FeedbackItem {
+  id: string;
+  fromId: string;
+  /** Denormalized so display survives author renames/departures. */
+  fromName: string;
+  type: FeedbackType;
+  /** Manifesto value ids (praise) or framework competency codes (constructive). Optional. */
+  tags: string[];
+  message: string;
+  visibility: FeedbackVisibility;
+  createdAt: string;
+}
+
 export type PersonKind = "candidate" | "employee";
 
 /** Platform access role, assigned in the Admin panel (SSO users). */
@@ -180,6 +204,8 @@ export interface Person {
   completedAt?: string;
   answers?: Answers;
   results?: Results;
+  /** Instant feedback received (employees only). Visibility filtered server-side. */
+  feedback?: FeedbackItem[];
 }
 
 export interface Team {

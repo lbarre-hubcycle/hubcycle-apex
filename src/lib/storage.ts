@@ -2,7 +2,17 @@ import { promises as fs } from "fs";
 import path from "path";
 import { Prisma, type Person as PersonRow, type Team as TeamRow } from "@prisma/client";
 import { getPrisma } from "./prisma";
-import type { Answers, Db, Lang, Person, PersonKind, Results, Team, UserRole } from "./types";
+import type {
+  Answers,
+  Db,
+  FeedbackItem,
+  Lang,
+  Person,
+  PersonKind,
+  Results,
+  Team,
+  UserRole,
+} from "./types";
 
 /**
  * Pluggable storage.
@@ -59,6 +69,7 @@ function personFromRow(row: PersonRow): Person {
     completedAt: row.completedAt ?? undefined,
     answers: row.answers === null ? undefined : (row.answers as Answers),
     results: row.results === null ? undefined : (row.results as unknown as Results),
+    feedback: row.feedback === null ? undefined : (row.feedback as unknown as FeedbackItem[]),
   };
 }
 
@@ -81,6 +92,8 @@ export function personToRow(p: Person) {
     answers: p.answers === undefined ? Prisma.DbNull : (p.answers as Prisma.InputJsonValue),
     results:
       p.results === undefined ? Prisma.DbNull : (p.results as unknown as Prisma.InputJsonValue),
+    feedback:
+      p.feedback === undefined ? Prisma.DbNull : (p.feedback as unknown as Prisma.InputJsonValue),
   };
 }
 

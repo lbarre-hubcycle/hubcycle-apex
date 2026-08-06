@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { canViewPerson, getViewer } from "@/lib/auth";
+import { sanitizeFeedback } from "@/lib/feedback";
 import { loadDb, saveDb } from "@/lib/storage";
 
 type Params = { params: Promise<{ id: string }> };
@@ -14,7 +15,12 @@ export async function GET(_req: Request, { params }: Params) {
   if (!canViewPerson(db, viewer, person)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  return NextResponse.json({ person, teams: db.teams, people: db.people });
+  return NextResponse.json({
+    person: sanitizeFeedback(person, viewer),
+    teams: db.teams,
+    // Teammates are needed for team-map context only — never expose their feedback here.
+    people: db.people.map((p) => ({ ...p, feedback: undefined })),
+  });
 }
 
 export async function PATCH(req: Request, { params }: Params) {

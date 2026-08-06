@@ -14,6 +14,7 @@ import { commercialStyleOf, roleCommercialNeed } from "@/lib/commercial-style";
 import { COMPETENCY_COACHING, COMPETENCY_READS, competencyStyleScore, readTier } from "@/lib/competency-read";
 import { FRAMEWORK_MAP, ROLE_EXPECTATIONS_MAP } from "@/data/competency-framework";
 import { Disclaimer, ProfileHero, StrengthsWatchouts, WorkstyleBlock } from "@/components/report";
+import { FeedbackCard } from "@/components/feedback";
 import type { Person, ProfileId, Team } from "@/lib/types";
 
 interface Payload {
@@ -580,6 +581,27 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   <li key={i}>→ {l(m)}</li>
                 ))}
               </ul>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Instant feedback received (visibility already filtered server-side) */}
+        {isEmployee && person.feedback?.length ? (
+          <div className="print-page card">
+            <h3 className="font-heading text-lg text-deep">
+              {fr ? "Feedback reçu" : "Received feedback"}
+            </h3>
+            <p className="mt-1 text-xs text-ink/50">
+              {fr
+                ? "Seuls les feedbacks que vous êtes autorisé·e à lire apparaissent ici."
+                : "Only feedback you are allowed to read shows here."}
+            </p>
+            <div className="mt-4 space-y-3">
+              {[...person.feedback]
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                .map((item) => (
+                  <FeedbackCard key={item.id} item={item} />
+                ))}
             </div>
           </div>
         ) : null}
