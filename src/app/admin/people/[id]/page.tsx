@@ -9,6 +9,9 @@ import { CULTURE_BANDS, VALUES } from "@/lib/culture";
 import { useI18n } from "@/lib/i18n";
 import { PrintButton } from "@/components/ui";
 import { Scale5, TeamMap, type MapDot } from "@/components/charts";
+import { Bar100 } from "@/components/charts";
+import { commercialFit, commercialStyleOf, roleCommercialNeed } from "@/lib/commercial-style";
+import { FRAMEWORK_MAP, ROLE_EXPECTATIONS_MAP } from "@/data/competency-framework";
 import { Disclaimer, ProfileHero, StrengthsWatchouts, WorkstyleBlock } from "@/components/report";
 import type { Person, ProfileId, Team } from "@/lib/types";
 
@@ -16,6 +19,134 @@ interface Payload {
   person: Person;
   people: Person[];
   teams: Team[];
+}
+
+
+/**
+ * Hunting vs farming debrief: what the role's competency expectations
+ * require (B1 / B2) versus the candidate's declared commercial style.
+ * Full report only — never in the candidate digest.
+ */
+function CommercialStyleBlock({
+  firstName,
+  roleId,
+  results,
+}: {
+  firstName: string;
+  roleId: string;
+  results: NonNullable<Person["results"]>;
+}) {
+  const { t, l, lang } = useI18n();
+  const fr = lang === "fr";
+  const need = roleCommercialNeed(roleId)!;
+  const read = commercialStyleOf(results);
+  const fit = commercialFit(need, read);
+  const pos = Math.min(95, Math.max(5, 50 + read.delta / 2));
+
+  const needTxt =
+    need === "both"
+      ? fr
+        ? "les deux registres — ouvrir de nouveaux comptes (chasse, B1) et faire grandir l’existant (culture, B2)"
+        : "both registers — opening new accounts (hunting, B1) and growing existing ones (farming, B2)"
+      : need === "hunting"
+        ? fr
+          ? "un fort drive de conquête : prospection, qualification, closing (chasse, B1)"
+          : "a strong new-business drive: prospecting, qualification, closing (hunting, B1)"
+        : fr
+          ? "un développement de comptes solide : satisfaction, rétention, upsell (culture, B2)"
+          : "solid account development: satisfaction, retention, upsell (farming, B2)";
+
+  const styleTxt =
+    read.style === "hunter"
+      ? fr
+        ? "un profil de chasseur marqué"
+        : "a marked hunter profile"
+      : read.style === "farmer"
+        ? fr
+          ? "un profil de cultivateur marqué"
+          : "a marked farmer profile"
+        : fr
+          ? "un profil équilibré entre chasse et culture"
+          : "a balanced hunter-farmer profile";
+
+  const verdict =
+    fit === "match"
+      ? fr
+        ? "Alignement net entre le style déclaré et l’exigence commerciale du poste."
+        : "Clear alignment between the declared style and the role's commercial requirement."
+      : fit === "partial"
+        ? fr
+          ? "Alignement partiel : le registre le moins naturel demandera un étayage conscient (coaching, binôme, rituels de prospection ou de suivi de comptes)."
+          : "Partial alignment: the less natural register will need conscious scaffolding (coaching, pairing, prospecting or account-review rituals)."
+        : fr
+          ? "Écart notable entre ce que le poste exige et le style déclaré — à explorer explicitement en entretien avant de conclure."
+          : "Notable gap between what the role requires and the declared style — explore it explicitly in interview before concluding.";
+
+  const questions =
+    need === "farming"
+      ? [
+          fr
+            ? "Racontez-moi comment vous avez fait grandir votre compte le plus stratégique : qu’avez-vous fait, sur quelle durée, avec quel résultat ?"
+            : "Tell me how you grew your most strategic account: what did you do, over what period, with what result?",
+        ]
+      : need === "hunting"
+        ? [
+            fr
+              ? "Racontez-moi le dernier compte que vous avez ouvert à partir de rien : votre démarche concrète, semaine par semaine, jusqu’à la signature."
+              : "Tell me about the last account you opened from scratch: your concrete approach, week by week, up to signature.",
+          ]
+        : [
+            fr
+              ? "Sur votre dernier portefeuille : quelle part de votre temps entre ouvrir de nouveaux comptes et développer l’existant — et qu’est-ce qui vous a le plus réussi ?"
+              : "On your last portfolio: how did you split your time between opening new accounts and growing existing ones — and which worked best for you?",
+          ];
+
+  return (
+    <div className="print-page card">
+      <h3 className="font-heading text-lg text-deep">
+        {fr ? "Style commercial — chasse vs culture" : "Commercial style — hunting vs farming"}
+      </h3>
+      <p className="mt-1 text-xs text-ink/50">
+        {fr
+          ? "Lecture issue des préférences déclarées, croisée avec les compétences attendues du poste (référentiel)."
+          : "Read from declared preferences, crossed with the role's expected competencies (referential)."}
+      </p>
+
+      <div className="mt-5">
+        <div className="mb-1.5 flex justify-between text-xs font-semibold text-deep">
+          <span>{fr ? "🌱 Culture (comptes)" : "🌱 Farming (accounts)"}</span>
+          <span>{fr ? "🎯 Chasse (conquête)" : "🎯 Hunting (new business)"}</span>
+        </div>
+        <div className="relative h-3 rounded-full bg-gradient-to-r from-sky/60 via-cloud to-coral/50">
+          <span
+            className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-deep shadow"
+            style={{ left: `${pos}%` }}
+          />
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Bar100 label={fr ? "Score conquête" : "Hunting score"} value={read.hunter} />
+          <Bar100 label={fr ? "Score développement" : "Farming score"} value={read.farmer} />
+        </div>
+      </div>
+
+      <div
+        className={`mt-5 rounded-2xl p-4 text-sm leading-relaxed ${
+          fit === "match" ? "bg-sky/20 text-ink/80" : fit === "partial" ? "bg-cloud/60 text-ink/80" : "border border-coral/30 bg-coral/5 text-ink/80"
+        }`}
+      >
+        <p>
+          {fr
+            ? `Ce poste exige ${needTxt}. Les préférences déclarées de ${firstName} dessinent ${styleTxt} (conquête ${read.hunter}/100 · développement ${read.farmer}/100).`
+            : `This role requires ${needTxt}. ${firstName}'s declared preferences show ${styleTxt} (hunting ${read.hunter}/100 · farming ${read.farmer}/100).`}
+        </p>
+        <p className="mt-2 font-medium">{verdict}</p>
+        <p className="mt-2 text-xs text-ink/55">
+          {fr ? "À poser en entretien : " : "To ask in interview: "}
+          {questions[0]}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -224,6 +355,30 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                   {t("report.roleVs")}
                   {role.derived ? " *" : ""}
                 </p>
+                {ROLE_EXPECTATIONS_MAP[role.id] ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="rounded-full bg-deep/10 px-2 py-0.5 font-semibold text-deep">
+                      {lang === "fr" ? "Niveau attendu" : "Expected level"}:{" "}
+                      {ROLE_EXPECTATIONS_MAP[role.id].level === "junior"
+                        ? "Junior"
+                        : ROLE_EXPECTATIONS_MAP[role.id].level === "mid"
+                          ? lang === "fr" ? "Confirmé" : "Mid"
+                          : "Senior"}
+                    </span>
+                    <span className="rounded-full bg-coral/10 px-2 py-0.5 font-semibold text-coral">
+                      {t("ref.keyKpi")}: {l(ROLE_EXPECTATIONS_MAP[role.id].keyKpi)}
+                    </span>
+                    {ROLE_EXPECTATIONS_MAP[role.id].competencies.map((code) => (
+                      <span
+                        key={code}
+                        title={l(FRAMEWORK_MAP[code].name)}
+                        className="cursor-help rounded-full bg-cloud px-2 py-0.5 font-semibold text-ink/60"
+                      >
+                        {code}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <span className="rounded-full bg-deep px-4 py-2 text-sm font-bold text-white">
                 {t("common.overall")} · {results.roleMatch.overall.toFixed(1)} / 5
@@ -280,6 +435,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
               </div>
             </div>
           </div>
+        ) : null}
+
+        {role && results && roleCommercialNeed(role.id) ? (
+          <CommercialStyleBlock
+            firstName={person.name.split(" ")[0]}
+            roleId={role.id}
+            results={results}
+          />
         ) : null}
 
         <StrengthsWatchouts results={results} />
