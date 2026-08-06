@@ -141,14 +141,21 @@ async function saveToPostgres(db: Db): Promise<void> {
     ),
     prisma.team.deleteMany({ where: { id: { notIn: teamIds } } }),
   ]);
-  // Outside the transaction: AppDoc may not exist yet (pre-migrate deploys).
+  // Outside the transaction. Self-healing: if the AppDoc table does not
+  // exist yet (deploy before migration), create it and retry — and if it
+  // still fails, throw so callers never report a phantom success.
   if (db.okrs !== undefined) {
     const data = db.okrs as unknown as Prisma.InputJsonValue;
-    await prisma.appDoc
-      .upsert({ where: { id: "okrs" }, create: { id: "okrs", data }, update: { data } })
-      .catch((err) => {
-        console.error("AppDoc save failed (run /api/admin/migrate):", err?.message ?? err);
-      });
+    const upsert = () =>
+      prisma.appDoc.upsert({ where: { id: "okrs" }, create: { id: "okrs", data }, update: { data } });
+    try {
+      await upsert();
+    } catch {
+      await prisma.$executeRawUnsafe(
+        'CREATE TABLE IF NOT EXISTS "AppDoc" ("id" TEXT NOT NULL, "data" JSONB NOT NULL, CONSTRAINT "AppDoc_pkey" PRIMARY KEY ("id"))'
+      );
+      await upsert();
+    }
   }
 }
 
