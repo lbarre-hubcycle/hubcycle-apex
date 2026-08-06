@@ -27,18 +27,25 @@ export async function POST(req: Request) {
   const isParticipant = viewer.personId === person.id || viewer.personId === partner.id;
   if (!isParticipant) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  // Every active objective's commitment ("how I will get there") is seeded
-  // as an action to review in the 1-2-1, assigned to the employee.
+  // Every active objective's commitments ("how I will get there") are seeded
+  // as actions to review in the 1-2-1, assigned to the employee.
+  const schedule = (cadence?: string, date?: string) =>
+    cadence === "weekly" ? " (1×/sem)" : cadence === "monthly" ? " (1×/mois)" : date ? ` (→ ${date})` : "";
   const commitments = (person.goals ?? [])
-    .filter((g) => (g.status === "on-track" || g.status === "at-risk") && g.commitment)
-    .map((g) => ({
-      id: newId(),
-      text: g.commitment!,
-      done: false,
-      assigneeId: person.id,
-      goalId: g.id,
-      createdAt: new Date().toISOString(),
-    }));
+    .filter((g) => g.status === "on-track" || g.status === "at-risk")
+    .flatMap((g) => {
+      const list =
+        g.commitments ??
+        (g.commitment ? [{ id: g.id, text: g.commitment, cadence: g.cadence ?? "weekly" }] : []);
+      return list.map((c) => ({
+        id: newId(),
+        text: `${c.text}${schedule(c.cadence, "date" in c ? c.date : undefined)}`,
+        done: false,
+        assigneeId: person.id,
+        goalId: g.id,
+        createdAt: new Date().toISOString(),
+      }));
+    });
 
   const meeting: OneOnOne = {
     id: newId(),

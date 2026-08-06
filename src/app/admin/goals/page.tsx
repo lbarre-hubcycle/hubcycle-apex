@@ -40,21 +40,24 @@ export default function GoalsPage() {
     manageable.find((p) => p.id === viewer?.personId) ??
     manageable[0];
 
+  type CommitmentDraft = { text: string; cadence: CommitmentCadence; date: string };
+  const EMPTY_COMMITMENT: CommitmentDraft = { text: "", cadence: "weekly", date: "" };
+
   const [showForm, setShowForm] = useState(false);
   const [kind, setKind] = useState<GoalKind>("performance");
   const [title, setTitle] = useState("");
-  const [commitment, setCommitment] = useState("");
-  const [cadence, setCadence] = useState<CommitmentCadence>("weekly");
-  const [kpi, setKpi] = useState("");
+  const [commitments, setCommitments] = useState<CommitmentDraft[]>([{ ...EMPTY_COMMITMENT }]);
   const [competency, setCompetency] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  function setCommitmentAt(i: number, patch: Partial<CommitmentDraft>) {
+    setCommitments((prev) => prev.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+  }
+
   const exp = person?.roleId ? ROLE_EXPECTATIONS_MAP[person.roleId] : undefined;
   const role = person?.roleId ? ROLE_MAP[person.roleId] : undefined;
 
-  // KPI options from the role referential; competency options = role + core.
-  const kpiOptions = exp ? [l(exp.keyKpi), ...exp.secondaryKpis.map((k) => l(k))] : [];
   const competencyOptions = [
     ...(exp?.competencies ?? []),
     ...["A1", "A2", "A3", "A4", "A5", "A6"],
@@ -74,17 +77,20 @@ export default function GoalsPage() {
       }));
   }, [person, exp, l]);
 
-  function prefill(nextKind: GoalKind, nextTitle: string, opts?: { kpi?: string; competency?: string; commitment?: string }) {
+  function prefill(nextKind: GoalKind, nextTitle: string, opts?: { competency?: string; commitment?: string }) {
     setShowForm(true);
     setKind(nextKind);
     setTitle(nextTitle);
-    setKpi(opts?.kpi ?? "");
     setCompetency(opts?.competency ?? "");
-    setCommitment(opts?.commitment ?? "");
+    setCommitments([{ ...EMPTY_COMMITMENT, text: opts?.commitment ?? "" }]);
   }
 
+  const validCommitments = commitments.filter(
+    (c) => c.text.trim() && (c.cadence !== "by-date" || c.date)
+  );
+
   async function create() {
-    if (!person || !title.trim() || !commitment.trim() || saving) return;
+    if (!person || !title.trim() || !validCommitments.length || saving) return;
     setSaving(true);
     const res = await fetch("/api/goals", {
       method: "POST",
@@ -93,9 +99,11 @@ export default function GoalsPage() {
         personId: person.id,
         kind,
         title,
-        commitment,
-        cadence,
-        kpi: kind === "performance" ? kpi || undefined : undefined,
+        commitments: validCommitments.map((c) => ({
+          text: c.text,
+          cadence: c.cadence,
+          date: c.cadence === "by-date" ? c.date : undefined,
+        })),
         competency: kind === "development" ? competency || undefined : undefined,
         targetDate: targetDate || undefined,
       }),
@@ -103,9 +111,7 @@ export default function GoalsPage() {
     setSaving(false);
     if (res.ok) {
       setTitle("");
-      setCommitment("");
-      setCadence("weekly");
-      setKpi("");
+      setCommitments([{ ...EMPTY_COMMITMENT }]);
       setCompetency("");
       setTargetDate("");
       setShowForm(false);
@@ -215,83 +221,104 @@ export default function GoalsPage() {
                     </button>
                   </div>
 
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    maxLength={200}
-                    placeholder={
-                      fr ? "L'objectif, formulé comme un résultat…" : "The objective, phrased as an outcome…"
-                    }
-                    className="mt-3 w-full rounded-xl border border-deep/15 bg-white px-3 py-2.5 text-sm font-medium"
-                  />
-                  <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-deep/60">
-                    {fr ? "Mon engagement — comment j'y arrive" : "My commitment — how I get there"}{" "}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      maxLength={200}
+                      placeholder={
+                        fr ? "L'objectif, formulé comme un résultat…" : "The objective, phrased as an outcome…"
+                      }
+                      className="min-w-0 flex-1 rounded-xl border border-deep/15 bg-white px-3 py-2.5 text-sm font-medium"
+                    />
+                    <label className="flex shrink-0 items-center gap-1.5 text-xs text-deep/60">
+                      🗓 {fr ? "Échéance" : "Due"}
+                      <input
+                        type="date"
+                        value={targetDate}
+                        onChange={(e) => setTargetDate(e.target.value)}
+                        className="rounded-xl border border-deep/15 bg-white px-2.5 py-2 text-xs"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-deep/60">
+                    {fr ? "Mes engagements — comment j'y arrive" : "My commitments — how I get there"}{" "}
                     <span className="text-coral">*</span>
                   </label>
-                  <textarea
-                    value={commitment}
-                    onChange={(e) => setCommitment(e.target.value)}
-                    rows={2}
-                    maxLength={500}
-                    placeholder={
-                      fr
-                        ? "Un engagement concret et récurrent. Ex. : 2 h de prospection bloquées chaque mardi matin."
-                        : "A concrete, recurring commitment. E.g.: 2h of prospecting blocked every Tuesday morning."
-                    }
-                    className="mt-1.5 w-full rounded-xl border border-deep/15 bg-white px-3 py-2.5 text-xs"
-                  />
-                  <div className="mt-2 flex gap-1.5">
-                    {(["weekly", "monthly"] as const).map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setCadence(c)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                          cadence === c
-                            ? "bg-deep text-white"
-                            : "border border-deep/15 text-deep/70 hover:bg-cloud"
-                        }`}
-                      >
-                        {c === "weekly" ? (fr ? "Hebdomadaire" : "Weekly") : fr ? "Mensuel" : "Monthly"}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-[11px] text-ink/45">
-                    {fr
-                      ? "L'engagement est repris automatiquement comme action à chaque nouveau 1-2-1."
-                      : "The commitment is automatically added as an action to every new 1-2-1."}
-                  </p>
-
-                  {kind === "performance" ? (
-                    <>
-                      <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-deep/60">
-                        KPI
-                      </label>
-                      {kpiOptions.length ? (
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {kpiOptions.map((option) => (
+                  <div className="mt-1.5 space-y-2">
+                    {commitments.map((c, i) => (
+                      <div key={i} className="rounded-xl border border-deep/10 bg-white p-2.5">
+                        <div className="flex items-start gap-2">
+                          <span className="mt-2 text-xs font-bold text-deep/40">{i + 1}.</span>
+                          <textarea
+                            value={c.text}
+                            onChange={(e) => setCommitmentAt(i, { text: e.target.value })}
+                            rows={2}
+                            maxLength={500}
+                            placeholder={
+                              fr
+                                ? "Un engagement concret. Ex. : call de suivi avec mes 10 principaux clients."
+                                : "A concrete commitment. E.g.: catch-up call with my top 10 clients."
+                            }
+                            className="min-w-0 flex-1 rounded-lg border border-deep/10 px-2.5 py-1.5 text-xs"
+                          />
+                          {commitments.length > 1 ? (
                             <button
-                              key={option}
-                              onClick={() => setKpi(kpi === option ? "" : option)}
-                              className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                                kpi === option
+                              onClick={() =>
+                                setCommitments((prev) => prev.filter((_, idx) => idx !== i))
+                              }
+                              className="mt-1 text-ink/30 hover:text-coral"
+                            >
+                              ×
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-5">
+                          {(["weekly", "monthly", "by-date"] as const).map((cad) => (
+                            <button
+                              key={cad}
+                              onClick={() => setCommitmentAt(i, { cadence: cad })}
+                              className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                                c.cadence === cad
                                   ? "bg-deep text-white"
                                   : "border border-deep/15 text-deep/70 hover:bg-cloud"
                               }`}
                             >
-                              {option}
+                              {cad === "weekly"
+                                ? fr ? "Hebdomadaire" : "Weekly"
+                                : cad === "monthly"
+                                  ? fr ? "Mensuel" : "Monthly"
+                                  : fr ? "Pour le…" : "By…"}
                             </button>
                           ))}
+                          {c.cadence === "by-date" ? (
+                            <input
+                              type="date"
+                              value={c.date}
+                              onChange={(e) => setCommitmentAt(i, { date: e.target.value })}
+                              className="rounded-lg border border-deep/15 px-2 py-1 text-[11px]"
+                            />
+                          ) : null}
                         </div>
-                      ) : null}
-                      <input
-                        value={kpi}
-                        onChange={(e) => setKpi(e.target.value)}
-                        maxLength={300}
-                        placeholder={fr ? "…ou un KPI libre" : "…or a free-text KPI"}
-                        className="mt-2 w-full rounded-xl border border-deep/15 bg-white px-3 py-2 text-xs"
-                      />
-                    </>
-                  ) : (
+                      </div>
+                    ))}
+                  </div>
+                  {commitments.length < 3 ? (
+                    <button
+                      onClick={() => setCommitments((prev) => [...prev, { ...EMPTY_COMMITMENT }])}
+                      className="mt-2 text-xs font-semibold text-deep/60 hover:text-deep"
+                    >
+                      {fr ? "+ Ajouter un engagement (max 3)" : "+ Add a commitment (max 3)"}
+                    </button>
+                  ) : null}
+                  <p className="mt-1.5 text-[11px] text-ink/45">
+                    {fr
+                      ? "Chaque engagement est repris automatiquement comme action à chaque nouveau 1-2-1."
+                      : "Each commitment is automatically added as an action to every new 1-2-1."}
+                  </p>
+
+                  {kind === "development" ? (
                     <>
                       <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-deep/60">
                         {fr ? "Compétence visée" : "Target competency"}
@@ -309,22 +336,12 @@ export default function GoalsPage() {
                         ))}
                       </select>
                     </>
-                  )}
-
-                  <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-deep/60">
-                    {fr ? "Échéance (optionnel)" : "Due date (optional)"}
-                  </label>
-                  <input
-                    type="date"
-                    value={targetDate}
-                    onChange={(e) => setTargetDate(e.target.value)}
-                    className="mt-1.5 rounded-xl border border-deep/15 bg-white px-3 py-2 text-sm"
-                  />
+                  ) : null}
 
                   <div className="mt-4">
                     <button
                       onClick={() => void create()}
-                      disabled={!title.trim() || !commitment.trim() || saving}
+                      disabled={!title.trim() || !validCommitments.length || saving}
                       className="btn-coral disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {saving ? "…" : fr ? "Créer l'objectif" : "Create objective"}
@@ -382,7 +399,7 @@ export default function GoalsPage() {
                   {[l(exp.keyKpi), ...exp.secondaryKpis.map((k) => l(k))].map((option, i) => (
                     <button
                       key={option}
-                      onClick={() => prefill("performance", option, { kpi: option })}
+                      onClick={() => prefill("performance", option)}
                       className="block w-full rounded-xl border border-deep/10 px-3 py-2 text-left text-xs text-ink/75 hover:bg-cloud"
                     >
                       {i === 0 ? "⭐ " : "＋ "}

@@ -36,6 +36,12 @@ export function GoalCard({
   const meta = STATUS_META[goal.status];
   const perf = goal.kind === "performance";
   const closed = goal.status === "done" || goal.status === "dropped";
+  // Multi-commitment list, with legacy single-commitment fallback.
+  const commitmentList =
+    goal.commitments ??
+    (goal.commitment
+      ? [{ id: goal.id, text: goal.commitment, cadence: goal.cadence ?? "weekly", date: undefined }]
+      : []);
   const target = goal.targetDate
     ? new Date(goal.targetDate).toLocaleDateString(fr ? "fr-FR" : "en-GB", {
         day: "numeric",
@@ -78,17 +84,32 @@ export function GoalCard({
         </span>
       </div>
 
-      <div className="mt-2 text-sm font-semibold text-ink">{goal.title}</div>
-      {goal.commitment ? (
-        <p className="mt-1.5 rounded-xl bg-cloud/50 px-3 py-2 text-xs leading-relaxed text-ink/75">
-          <span className="font-semibold text-deep">
-            🤝{" "}
-            {goal.cadence === "monthly"
-              ? fr ? "Engagement mensuel : " : "Monthly commitment: "
-              : fr ? "Engagement hebdo : " : "Weekly commitment: "}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-ink">{goal.title}</span>
+        {target ? (
+          <span className="shrink-0 rounded-full border border-deep/20 px-2.5 py-0.5 text-[11px] font-semibold text-deep">
+            🗓 {fr ? "Échéance" : "Due"} {target}
           </span>
-          {goal.commitment}
-        </p>
+        ) : null}
+      </div>
+      {commitmentList.length ? (
+        <div className="mt-2 space-y-1.5">
+          {commitmentList.map((c, i) => (
+            <div key={c.id ?? i} className="flex items-start gap-2 rounded-xl bg-cloud/50 px-3 py-2 text-xs leading-relaxed">
+              <span className="mt-0.5 font-bold text-deep/50">{i + 1}.</span>
+              <span className="flex-1 text-ink/80">{c.text}</span>
+              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-deep/70">
+                {c.cadence === "weekly"
+                  ? fr ? "Hebdo" : "Weekly"
+                  : c.cadence === "monthly"
+                    ? fr ? "Mensuel" : "Monthly"
+                    : c.date
+                      ? `${fr ? "Pour le" : "By"} ${new Date(c.date).toLocaleDateString(fr ? "fr-FR" : "en-GB", { day: "numeric", month: "short" })}`
+                      : fr ? "Date" : "Date"}
+              </span>
+            </div>
+          ))}
+        </div>
       ) : goal.description ? (
         <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-ink/60">
           {goal.description}
@@ -103,7 +124,6 @@ export function GoalCard({
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-ink/45">
-        {target ? <span>🗓 {fr ? "Échéance" : "Due"} {target}</span> : null}
         <span>
           {goal.checkins.length} {fr ? "check-in(s)" : "check-in(s)"}
         </span>

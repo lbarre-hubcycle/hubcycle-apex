@@ -188,15 +188,26 @@ export interface GoalCheckin {
   note?: string;
 }
 
-export type CommitmentCadence = "weekly" | "monthly";
+export type CommitmentCadence = "weekly" | "monthly" | "by-date";
+
+/** One "how I will get there" commitment, with its own schedule. */
+export interface Commitment {
+  id: string;
+  text: string;
+  cadence: CommitmentCadence;
+  /** Deadline, when cadence is "by-date". */
+  date?: string;
+}
 
 export interface Goal {
   id: string;
   title: string;
   description?: string;
-  /** "How I will get there" — a concrete commitment, required at creation. */
+  /** 1–3 commitments describing how the person will get there. Required at creation. */
+  commitments?: Commitment[];
+  /** Legacy single commitment (pre-multi). Kept for old goals. */
   commitment?: string;
-  /** The commitment's rhythm: reviewed weekly or monthly (in 1-2-1s). */
+  /** Legacy cadence for the single commitment. */
   cadence?: CommitmentCadence;
   /** Future: the OKR this objective contributes to (set once OKRs exist). */
   okrId?: string;

@@ -2,11 +2,29 @@ import { NextResponse } from "next/server";
 import { getViewer, type Viewer } from "@/lib/auth";
 import { loadDb, newId, saveDb } from "@/lib/storage";
 import { FRAMEWORK_MAP } from "@/data/competency-framework";
-import type { CommitmentCadence, Goal, GoalKind, GoalStatus, Person } from "@/lib/types";
+import type { Commitment, CommitmentCadence, Goal, GoalKind, GoalStatus, Person } from "@/lib/types";
 
 const KINDS: GoalKind[] = ["performance", "development"];
 const STATUSES: GoalStatus[] = ["on-track", "at-risk", "done", "dropped"];
-const CADENCES: CommitmentCadence[] = ["weekly", "monthly"];
+const CADENCES: CommitmentCadence[] = ["weekly", "monthly", "by-date"];
+
+/** Validate and normalize 1–3 commitments, each with its own schedule. */
+function parseCommitments(
+  input: unknown
+): Commitment[] | null {
+  if (!Array.isArray(input)) return null;
+  const cleaned = input
+    .map((c) => {
+      const text = typeof c?.text === "string" ? c.text.trim().slice(0, 500) : "";
+      const cadence: CommitmentCadence = CADENCES.includes(c?.cadence) ? c.cadence : "weekly";
+      const date = cadence === "by-date" && typeof c?.date === "string" && c.date ? c.date : undefined;
+      return text ? { id: newId(), text, cadence, date } : null;
+    })
+    .filter(Boolean) as Commitment[];
+  if (cleaned.length < 1 || cleaned.length > 3) return null;
+  if (cleaned.some((c) => c.cadence === "by-date" && !c.date)) return null;
+  return cleaned;
+}
 
 /** Goals are managed by the person themselves, their managers, or HR. */
 function canManage(viewer: Viewer, person: Person): boolean {
@@ -30,24 +48,20 @@ export async function POST(req: Request) {
     personId?: string;
     title?: string;
     description?: string;
-    commitment?: string;
-    cadence?: CommitmentCadence;
+    commitments?: unknown;
     kind?: GoalKind;
     competency?: string;
-    kpi?: string;
     targetDate?: string;
   };
   const title = body.title?.trim();
   if (!body.personId || !title || title.length > 200 || !body.kind || !KINDS.includes(body.kind)) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
-  // The "how I will get there" commitment is mandatory, with a cadence.
-  const commitment = body.commitment?.trim();
-  if (!commitment || commitment.length > 500) {
-    return NextResponse.json({ error: "commitment" }, { status: 400 });
+  // "How I will get there" is mandatory: 1–3 commitments, each scheduled.
+  const commitments = parseCommitments(body.commitments);
+  if (!commitments) {
+    return NextResponse.json({ error: "commitments" }, { status: 400 });
   }
-  const cadence: CommitmentCadence =
-    body.cadence && CADENCES.includes(body.cadence) ? body.cadence : "weekly";
 
   const db = await loadDb();
   const person = db.people.find((p) => p.id === body.personId && p.kind === "employee");
@@ -58,14 +72,12 @@ export async function POST(req: Request) {
     id: newId(),
     title,
     description: body.description?.trim().slice(0, 2000) || undefined,
-    commitment,
-    cadence,
+    commitments,
     kind: body.kind,
     competency:
       body.kind === "development" && body.competency && FRAMEWORK_MAP[body.competency]
         ? body.competency
         : undefined,
-    kpi: body.kind === "performance" ? body.kpi?.trim().slice(0, 300) || undefined : undefined,
     targetDate: body.targetDate || undefined,
     status: "on-track",
     progress: 0,
@@ -90,9 +102,7 @@ export async function PATCH(req: Request) {
     checkin?: { status?: GoalStatus; progress?: number; note?: string };
     title?: string;
     description?: string;
-    commitment?: string;
-    cadence?: CommitmentCadence;
-    kpi?: string;
+    commitments?: unknown;
     competency?: string;
     targetDate?: string;
   };
@@ -126,10 +136,14 @@ export async function PATCH(req: Request) {
     ];
   }
   if (body.title?.trim()) goal.title = body.title.trim().slice(0, 200);
-  if (body.commitment?.trim()) goal.commitment = body.commitment.trim().slice(0, 500);
-  if (body.cadence && CADENCES.includes(body.cadence)) goal.cadence = body.cadence;
+  if (body.commitments !== undefined) {
+    const commitments = parseCommitments(body.commitments);
+    if (!commitments) return NextResponse.json({ error: "commitments" }, { status: 400 });
+    goal.commitments = commitments;
+    goal.commitment = undefined;
+    goal.cadence = undefined;
+  }
   if ("description" in body) goal.description = body.description?.trim().slice(0, 2000) || undefined;
-  if ("kpi" in body && goal.kind === "performance") goal.kpi = body.kpi?.trim() || undefined;
   if ("competency" in body && goal.kind === "development") {
     goal.competency = body.competency && FRAMEWORK_MAP[body.competency] ? body.competency : undefined;
   }
