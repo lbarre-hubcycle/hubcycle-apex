@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useI18n } from "@/lib/i18n";
 import { LangToggle, Logo } from "@/components/ui";
 
+/**
+ * Sign-in screen. With SSO configured this is a single Google button;
+ * the legacy access-code form only appears when SSO is not configured,
+ * or as a break-glass path at /admin?legacy=1.
+ */
 export function Login({ ssoEnabled, devMode }: { ssoEnabled: boolean; devMode: boolean }) {
   const { t } = useI18n();
   const router = useRouter();
@@ -13,7 +18,13 @@ export function Login({ ssoEnabled, devMode }: { ssoEnabled: boolean; devMode: b
   const [devEmail, setDevEmail] = useState("");
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [showLegacy, setShowLegacy] = useState(!ssoEnabled && !devMode);
+  const [legacyRequested, setLegacyRequested] = useState(false);
+
+  useEffect(() => {
+    setLegacyRequested(new URLSearchParams(window.location.search).has("legacy"));
+  }, []);
+
+  const showLegacy = !ssoEnabled || legacyRequested;
 
   async function submitCode(e: React.FormEvent) {
     e.preventDefault();
@@ -74,7 +85,7 @@ export function Login({ ssoEnabled, devMode }: { ssoEnabled: boolean; devMode: b
           ) : null}
 
           {showLegacy ? (
-            <form onSubmit={submitCode} className="mt-5 border-t border-cloud pt-5">
+            <form onSubmit={submitCode} className={ssoEnabled ? "mt-5 border-t border-cloud pt-5" : "mt-6"}>
               <label className="label">{t("login.code")}</label>
               <input
                 type="password"
@@ -90,14 +101,7 @@ export function Login({ ssoEnabled, devMode }: { ssoEnabled: boolean; devMode: b
                 {t("login.submit")}
               </button>
             </form>
-          ) : (
-            <button
-              onClick={() => setShowLegacy(true)}
-              className="mt-5 w-full text-center text-xs text-ink/40 hover:text-deep"
-            >
-              {t("login.legacy")}
-            </button>
-          )}
+          ) : null}
         </div>
       </main>
     </div>

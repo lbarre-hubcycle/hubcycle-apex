@@ -56,7 +56,7 @@ Four roles, resolved from the signed-in Google account (matched to a person's em
 - **Recruiter** — candidates only.
 - **Employee** — their own Apex Me space only (profile, strengths, growth focus — no comparisons).
 
-The legacy `ADMIN_ACCESS_CODE` login remains as a break-glass path (HR role). For local development set `AUTH_DEV_MODE=true` to enable a passwordless email sign-in (disabled on Vercel). Candidates never log in: they use their private invitation token and can never see results through the app; HR shares the printable digest at its discretion. PDF export = print-optimized report pages.
+The legacy `ADMIN_ACCESS_CODE` login remains as a break-glass path (HR role), hidden once SSO is configured — reach it at `/admin?legacy=1`. For local development set `AUTH_DEV_MODE=true` to enable a passwordless email sign-in (disabled on Vercel). Candidates never log in: they use their private invitation token and can never see results through the app; HR shares the printable digest at its discretion. PDF export = print-optimized report pages.
 
 ## Data sources
 
