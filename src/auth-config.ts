@@ -14,6 +14,14 @@ import Credentials from "next-auth/providers/credentials";
 
 export const ALLOWED_DOMAIN = process.env.SSO_ALLOWED_DOMAIN || "hubcycled.com";
 
+// Google only accepts the redirect URI registered for the stable domain.
+// Vercel serves the app on per-deployment URLs too (hubcycle-apex-xxx…);
+// pin AUTH_URL so the OAuth callback always goes through the canonical host,
+// wherever the user started from. An explicit AUTH_URL env var still wins.
+if (process.env.VERCEL && !process.env.AUTH_URL) {
+  process.env.AUTH_URL = "https://hubcycle-apex.vercel.app";
+}
+
 export function ssoConfigured(): boolean {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
